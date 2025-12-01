@@ -1,0 +1,134 @@
+.task-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 4px solid #3498db;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.task-card.task-overdue {
+  border-left-color: #e74c3c;
+}
+
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.task-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.task-card-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.task-card-status,
+.task-card-priority {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-pending {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.status-in-progress {
+  background-color: #f39c12;
+  color: white;
+}
+
+.status-completed {
+  background-color: #27ae60;
+  color: white;
+}
+
+.status-overdue {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.status-cancelled {
+  background-color: #7f8c8d;
+  color: white;
+}
+
+.priority-low {
+  background-color: #3498db;
+  color: white;
+}
+
+.priority-medium {
+  background-color: #f39c12;
+  color: white;
+}
+
+.priority-high {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.task-card-body {
+  margin-bottom: 1rem;
+}
+
+.task-card-description {
+  margin: 0.75rem 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.task-card-deadline,
+.task-card-assigned,
+.task-card-meeting {
+  margin: 0.5rem 0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.task-overdue-indicator {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.task-card-footer {
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.task-card-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.task-card-btn-complete {
+  background-color: #27ae60;
+  color: white;
+}
+
+.task-card-btn-complete:hover {
+  background-color: #229954;
+}
+
+

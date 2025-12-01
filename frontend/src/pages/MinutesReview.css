@@ -1,0 +1,105 @@
+.minutes-review {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.minutes-review-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.minutes-review-title {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+}
+
+.minutes-review-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+}
+
+.minutes-review-sidebar {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.minutes-review-sidebar h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.minutes-review-meetings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.minutes-review-meeting-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.minutes-review-meeting-item:hover {
+  background: #e8f4f8;
+  border-color: #3498db;
+}
+
+.minutes-review-meeting-item.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.minutes-review-meeting-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.minutes-review-meeting-date {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.minutes-review-main {
+  min-height: 400px;
+}
+
+.minutes-review-loading,
+.minutes-review-empty,
+.minutes-review-placeholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  color: #999;
+  font-style: italic;
+}
+
+.minutes-review-error {
+  padding: 1rem;
+  background: #fee;
+  color: #c33;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 968px) {
+  .minutes-review-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+
