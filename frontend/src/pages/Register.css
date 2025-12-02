@@ -111,3 +111,38 @@
   text-decoration: underline;
 }
 
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+  }
+
+  .register-title {
+    font-size: 1.75rem;
+  }
+
+  .register-subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-container {
+    padding: 1.5rem 1rem;
+    margin: 0.5rem;
+  }
+
+  .register-title {
+    font-size: 1.5rem;
+  }
+
+  .register-subtitle {
+    font-size: 1rem;
+  }
+
+  .register-form {
+    gap: 1.25rem;
+  }
+}
+

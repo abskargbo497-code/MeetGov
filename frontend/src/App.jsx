@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { MeetingProvider } from './context/MeetingContext';
+import { SidebarProvider } from './context/SidebarContext';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
@@ -23,9 +24,10 @@ function App() {
   return (
     <AuthProvider>
       <MeetingProvider>
-        <Router>
-          <div className="app">
-            <Navbar />
+        <SidebarProvider>
+          <Router>
+            <div className="app">
+              <Navbar />
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -123,6 +125,7 @@ function App() {
             </Routes>
           </div>
         </Router>
+        </SidebarProvider>
       </MeetingProvider>
     </AuthProvider>
   );

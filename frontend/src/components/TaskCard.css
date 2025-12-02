@@ -131,4 +131,35 @@
   background-color: #229954;
 }
 
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .task-card {
+    padding: 1rem;
+  }
+
+  .task-card-header {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .task-card-title {
+    font-size: 1rem;
+  }
+
+  .task-card-badges {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-card {
+    padding: 0.75rem;
+  }
+
+  .task-card-title {
+    font-size: 0.95rem;
+  }
+}
+
 

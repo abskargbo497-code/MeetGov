@@ -49,4 +49,37 @@
   font-style: italic;
 }
 
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .qr-scanner {
+    padding: 1rem;
+  }
+
+  .qr-scanner-container {
+    padding: 1.5rem;
+  }
+
+  .qr-scanner-title {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .qr-scanner {
+    padding: 0.75rem;
+  }
+
+  .qr-scanner-container {
+    padding: 1rem;
+  }
+
+  .qr-scanner-title {
+    font-size: 1.25rem;
+  }
+
+  .qr-scanner-reader {
+    margin: 1rem 0;
+  }
+}
+
 

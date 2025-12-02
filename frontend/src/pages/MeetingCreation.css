@@ -103,9 +103,44 @@
   cursor: not-allowed;
 }
 
+/* Mobile responsive */
 @media (max-width: 768px) {
+  .meeting-creation {
+    padding: 1rem;
+  }
+
+  .meeting-creation-container {
+    padding: 1.5rem;
+  }
+
+  .meeting-creation-title {
+    font-size: 1.5rem;
+  }
+
   .meeting-creation-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .meeting-creation-form-actions {
+    flex-direction: column;
+  }
+
+  .meeting-creation-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .meeting-creation {
+    padding: 0.75rem;
+  }
+
+  .meeting-creation-container {
+    padding: 1rem;
+  }
+
+  .meeting-creation-title {
+    font-size: 1.25rem;
   }
 }
 

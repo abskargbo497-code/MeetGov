@@ -96,9 +96,44 @@
   margin-bottom: 1rem;
 }
 
+/* Mobile responsive */
 @media (max-width: 968px) {
+  .minutes-review {
+    padding: 1rem;
+  }
+
+  .minutes-review-container {
+    padding: 1.5rem;
+  }
+
+  .minutes-review-title {
+    font-size: 1.5rem;
+  }
+
   .minutes-review-content {
     grid-template-columns: 1fr;
+  }
+
+  .minutes-review-sidebar {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .minutes-review {
+    padding: 0.75rem;
+  }
+
+  .minutes-review-container {
+    padding: 1rem;
+  }
+
+  .minutes-review-title {
+    font-size: 1.25rem;
+  }
+
+  .minutes-review-sidebar {
+    padding: 1rem;
   }
 }
 
