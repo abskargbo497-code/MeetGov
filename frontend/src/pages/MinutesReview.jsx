@@ -59,12 +59,14 @@ const MinutesReview = () => {
               <div className="minutes-review-loading">Loading...</div>
             ) : meetings.length > 0 ? (
               <div className="minutes-review-meetings">
-                {meetings.map((meeting) => (
+                {meetings.map((meeting) => {
+                  const meetingId = meeting.id || meeting._id;
+                  return (
                   <button
-                    key={meeting._id}
-                    onClick={() => handleMeetingSelect(meeting._id)}
+                    key={meetingId}
+                    onClick={() => handleMeetingSelect(meetingId)}
                     className={`minutes-review-meeting-item ${
-                      selectedMeeting === meeting._id ? 'active' : ''
+                      selectedMeeting === meetingId ? 'active' : ''
                     }`}
                   >
                     <div className="minutes-review-meeting-title">
@@ -74,7 +76,8 @@ const MinutesReview = () => {
                       {new Date(meeting.datetime).toLocaleDateString()}
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="minutes-review-empty">No completed meetings</p>

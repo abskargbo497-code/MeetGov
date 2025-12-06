@@ -1,0 +1,449 @@
+.meeting-detail {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.meeting-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.meeting-detail-back {
+  padding: 0.5rem 1rem;
+  background: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: all 0.2s;
+}
+
+.meeting-detail-back:hover {
+  background: var(--hover-background);
+}
+
+.meeting-detail-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.meeting-detail-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+}
+
+.meeting-detail-btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.meeting-detail-btn-primary:hover {
+  background: var(--primary-color-dark);
+  transform: translateY(-2px);
+}
+
+.meeting-detail-btn-secondary {
+  background: var(--card-background);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.meeting-detail-btn-secondary:hover {
+  background: var(--hover-background);
+  transform: translateY(-2px);
+}
+
+.meeting-detail-content {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.meeting-detail-main {
+  max-width: 800px;
+}
+
+.meeting-detail-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 2rem 0;
+  color: var(--dark-gray);
+}
+
+.meeting-detail-info {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.meeting-detail-info-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.meeting-detail-info-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 120px;
+}
+
+.meeting-detail-info-value {
+  color: var(--dark-gray);
+}
+
+.meeting-detail-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.meeting-detail-status-scheduled {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.meeting-detail-status-in-progress {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.meeting-detail-status-completed {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.meeting-detail-status-cancelled {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.meeting-detail-section {
+  margin-top: 2rem;
+}
+
+.meeting-detail-section-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--dark-gray);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meeting-detail-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.meeting-detail-section-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--primary-color);
+}
+
+.meeting-detail-description {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--dark-gray);
+  white-space: pre-wrap;
+}
+
+.meeting-detail-loading,
+.meeting-detail-error {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+
+.meeting-detail-error button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.meeting-detail-error button:hover {
+  background: var(--primary-color-dark);
+}
+
+/* Status Management Section */
+.meeting-detail-status-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-md);
+}
+
+.meeting-detail-status-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--dark-gray);
+  margin-bottom: 1rem;
+}
+
+.meeting-detail-status-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.meeting-detail-status-btn {
+  padding: 0.625rem 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--white);
+  color: var(--dark-gray);
+}
+
+.meeting-detail-status-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+}
+
+.meeting-detail-status-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meeting-detail-status-btn.active {
+  border-width: 2px;
+  font-weight: 600;
+}
+
+.meeting-detail-status-btn.meeting-status-scheduled.active {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--white);
+}
+
+.meeting-detail-status-btn.meeting-status-in-progress.active {
+  background: var(--accent-yellow);
+  border-color: var(--accent-yellow);
+  color: var(--dark-gray);
+}
+
+.meeting-detail-status-btn.meeting-status-completed.active {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: var(--white);
+}
+
+.meeting-detail-status-btn.meeting-status-rescheduled.active {
+  background: var(--light-blue);
+  border-color: var(--light-blue);
+  color: var(--white);
+}
+
+.meeting-detail-status-btn.meeting-status-cancelled.active {
+  background: var(--error);
+  border-color: var(--error);
+  color: var(--white);
+}
+
+.meeting-detail-status-badge {
+  padding: 0.375rem 0.875rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+.meeting-detail-status-badge.meeting-status-scheduled {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.meeting-detail-status-badge.meeting-status-in-progress {
+  background: var(--accent-yellow);
+  color: var(--dark-gray);
+}
+
+.meeting-detail-status-badge.meeting-status-completed {
+  background: var(--secondary);
+  color: var(--white);
+}
+
+.meeting-detail-status-badge.meeting-status-rescheduled {
+  background: var(--light-blue);
+  color: var(--white);
+}
+
+.meeting-detail-status-badge.meeting-status-cancelled {
+  background: var(--error);
+  color: var(--white);
+}
+
+.meeting-detail-message {
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.meeting-detail-error-message {
+  background: rgba(255, 193, 7, 0.15);
+  border: 2px solid var(--accent-yellow);
+  color: var(--dark-gray);
+  font-weight: 500;
+}
+
+.meeting-detail-success-message {
+  background: rgba(0, 191, 165, 0.15);
+  border: 2px solid var(--secondary);
+  color: var(--dark-gray);
+  font-weight: 500;
+}
+
+.meeting-detail-message-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.meeting-detail-error-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--error);
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .meeting-detail {
+    padding: 1rem;
+  }
+
+  .meeting-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .meeting-detail-status-controls {
+    flex-direction: column;
+  }
+
+  .meeting-detail-status-btn {
+    width: 100%;
+  }
+}
+
+/* Attendance Section */
+.meeting-attendance-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.meeting-attendance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow);
+}
+
+.meeting-attendance-item:hover {
+  background: var(--card-bg-teal);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--secondary);
+}
+
+.meeting-attendance-user {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meeting-attendance-user strong {
+  color: var(--dark-gray);
+  font-size: 0.9375rem;
+}
+
+.meeting-attendance-role {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.meeting-attendance-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.meeting-attendance-status {
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.meeting-attendance-status.status-present {
+  background: rgba(0, 191, 165, 0.15);
+  color: var(--secondary);
+  font-weight: 600;
+}
+
+.meeting-attendance-status.status-late {
+  background: rgba(255, 193, 7, 0.15);
+  color: var(--accent-yellow-dark);
+  font-weight: 600;
+}
+
+.meeting-attendance-status.status-absent {
+  background: rgba(229, 57, 53, 0.15);
+  color: var(--error);
+  font-weight: 600;
+}
+
+.meeting-attendance-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+

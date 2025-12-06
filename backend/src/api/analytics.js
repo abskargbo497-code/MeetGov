@@ -6,6 +6,7 @@ import Meeting from '../models/Meeting.js';
 import User from '../models/User.js';
 import { asyncHandler, errorResponse, successResponse } from '../utils/helpers.js';
 import { log } from '../utils/logger.js';
+import '../models/index.js'; // Ensure associations are loaded
 
 const router = express.Router();
 
@@ -226,6 +227,110 @@ router.get(
     return successResponse(res, 200, {
       count: overdueTasks.length,
       tasks: overdueTasks,
+    });
+  })
+);
+
+/**
+ * @route   GET /api/analytics/meetings
+ * @desc    Get meeting analytics and trends
+ * @access  Private
+ */
+router.get(
+  '/meetings',
+  asyncHandler(async (req, res) => {
+    const { startDate, endDate, status } = req.query;
+
+    const where = {};
+    if (status) {
+      where.status = status;
+    }
+    if (startDate || endDate) {
+      where.datetime = {};
+      if (startDate) where.datetime[Op.gte] = new Date(startDate);
+      if (endDate) where.datetime[Op.lte] = new Date(endDate);
+    }
+
+    const meetings = await Meeting.findAll({
+      where,
+      include: [
+        {
+          model: Attendance,
+          as: 'attendances',
+          required: false,
+          attributes: ['id', 'status'],
+        },
+      ],
+      order: [['datetime', 'ASC']],
+    });
+
+    // Calculate statistics
+    const totalMeetings = meetings.length;
+    const scheduledCount = meetings.filter(m => m.status === 'scheduled').length;
+    const inProgressCount = meetings.filter(m => m.status === 'in-progress').length;
+    const completedCount = meetings.filter(m => m.status === 'completed').length;
+    const cancelledCount = meetings.filter(m => m.status === 'cancelled').length;
+
+    // Calculate average attendance per meeting
+    let totalAttendance = 0;
+    let meetingsWithAttendance = 0;
+    meetings.forEach(meeting => {
+      if (meeting.attendances && meeting.attendances.length > 0) {
+        totalAttendance += meeting.attendances.length;
+        meetingsWithAttendance++;
+      }
+    });
+    const avgAttendance = meetingsWithAttendance > 0 
+      ? (totalAttendance / meetingsWithAttendance).toFixed(2)
+      : 0;
+
+    // Group by month for trends
+    const monthlyTrends = {};
+    meetings.forEach(meeting => {
+      const monthKey = new Date(meeting.datetime).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short' 
+      });
+      if (!monthlyTrends[monthKey]) {
+        monthlyTrends[monthKey] = {
+          month: monthKey,
+          total: 0,
+          completed: 0,
+          attendance: 0,
+        };
+      }
+      monthlyTrends[monthKey].total++;
+      if (meeting.status === 'completed') {
+        monthlyTrends[monthKey].completed++;
+      }
+      if (meeting.attendances) {
+        monthlyTrends[monthKey].attendance += meeting.attendances.length;
+      }
+    });
+
+    // Calculate completion rate
+    const completionRate = totalMeetings > 0
+      ? ((completedCount / totalMeetings) * 100).toFixed(2)
+      : 0;
+
+    return successResponse(res, 200, {
+      summary: {
+        total: totalMeetings,
+        scheduled: scheduledCount,
+        inProgress: inProgressCount,
+        completed: completedCount,
+        cancelled: cancelledCount,
+        avgAttendance: parseFloat(avgAttendance),
+        completionRate: parseFloat(completionRate),
+      },
+      trends: Object.values(monthlyTrends),
+      meetings: meetings.map(m => ({
+        id: m.id,
+        title: m.title,
+        datetime: m.datetime,
+        status: m.status,
+        attendanceCount: m.attendances ? m.attendances.length : 0,
+      })),
     });
   })
 );

@@ -96,7 +96,7 @@ const Dashboard = () => {
           {meetings.length > 0 ? (
             <div className="dashboard-meetings">
               {meetings.map((meeting) => (
-                <MeetingCard key={meeting._id} meeting={meeting} />
+                <MeetingCard key={meeting.id || meeting._id || Math.random()} meeting={meeting} />
               ))}
             </div>
           ) : (
@@ -109,7 +109,7 @@ const Dashboard = () => {
           {tasks.length > 0 ? (
             <div className="dashboard-tasks">
               {tasks.map((task) => (
-                <TaskCard key={task._id} task={task} />
+                <TaskCard key={task.id || task._id || Math.random()} task={task} />
               ))}
             </div>
           ) : (

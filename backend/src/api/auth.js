@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import User from '../models/User.js';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, authenticateToken } from '../utils/jwt.js';
 import { asyncHandler, errorResponse, successResponse } from '../utils/helpers.js';
 import { log } from '../utils/logger.js';
 
@@ -18,49 +18,84 @@ router.post(
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please provide a valid email'),
     body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    body('role').optional().isIn(['admin', 'official', 'secretary']).withMessage('Invalid role'),
+    body('role').optional().isIn(['secretary', 'official']).withMessage('Invalid role. Must be secretary or official'),
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return errorResponse(res, 400, 'Validation failed', errors.array());
+      // Format validation errors into a single message
+      const errorMessages = errors.array().map(err => err.msg).join(', ');
+      return errorResponse(res, 400, errorMessages || 'Validation failed', errors.array());
     }
 
     const { name, email, password, role, department } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return errorResponse(res, 400, 'User with this email already exists');
+    try {
+      // Check if user already exists
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return errorResponse(res, 400, 'User with this email already exists');
+      }
+
+      // Prevent admin registration via normal registration
+      if (role === 'super_admin' || role === 'administrator' || role === 'admin') {
+        return errorResponse(res, 403, 'Admin role cannot be registered. Admin must be seeded in the database.');
+      }
+
+      // Only allow official or secretary registration
+      const allowedRoles = ['official', 'secretary'];
+      const finalRole = role && allowedRoles.includes(role) ? role : 'official';
+
+      // Create new user (password will be hashed by hook)
+      const user = await User.create({
+        name,
+        email,
+        password_hash: password, // Will be hashed by beforeCreate hook
+        role: finalRole,
+        department: department || null,
+      });
+
+      // Generate tokens
+      const accessToken = generateAccessToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      });
+
+      const refreshToken = generateRefreshToken({
+        userId: user.id,
+      });
+
+      log.info('User registered successfully', { userId: user.id, email: user.email });
+
+      return successResponse(res, 201, {
+        user: user.toJSON(),
+        accessToken,
+        refreshToken,
+      }, 'User registered successfully');
+    } catch (error) {
+      log.error('Registration error:', error);
+      
+      // Handle Sequelize validation errors
+      if (error.name === 'SequelizeValidationError') {
+        const validationErrors = error.errors.map(err => err.message).join(', ');
+        return errorResponse(res, 400, validationErrors || 'Validation failed');
+      }
+      
+      // Handle unique constraint errors (duplicate email)
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        return errorResponse(res, 400, 'User with this email already exists');
+      }
+      
+      // Handle database connection errors
+      if (error.name === 'SequelizeConnectionError' || error.name === 'SequelizeDatabaseError') {
+        log.error('Database error during registration:', error.message);
+        return errorResponse(res, 500, 'Database connection error. Please try again later.');
+      }
+      
+      // Generic error
+      return errorResponse(res, 500, error.message || 'Registration failed. Please try again.');
     }
-
-    // Create new user (password will be hashed by hook)
-    const user = await User.create({
-      name,
-      email,
-      password_hash: password, // Will be hashed by beforeCreate hook
-      role: role || 'official',
-      department,
-    });
-
-    // Generate tokens
-    const accessToken = generateAccessToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    const refreshToken = generateRefreshToken({
-      userId: user.id,
-    });
-
-    log.info('User registered successfully', { userId: user.id, email: user.email });
-
-    return successResponse(res, 201, {
-      user: user.toJSON(),
-      accessToken,
-      refreshToken,
-    }, 'User registered successfully');
   })
 );
 
@@ -165,15 +200,13 @@ router.post(
 /**
  * @route   GET /api/auth/me
  * @desc    Get current user
- * @access  Private
+ * @access  Private (requires authentication)
  */
 router.get(
   '/me',
+  authenticateToken, // Apply authentication middleware
   asyncHandler(async (req, res) => {
-    if (!req.user) {
-      return errorResponse(res, 401, 'Authentication required');
-    }
-
+    // req.user is guaranteed to exist after authenticateToken middleware
     const user = await User.findByPk(req.user.userId);
     if (!user) {
       return errorResponse(res, 404, 'User not found');

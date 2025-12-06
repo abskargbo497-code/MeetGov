@@ -43,6 +43,11 @@ const Transcript = sequelize.define('Transcript', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  summary_json: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Structured summary with abstract, key_points, decisions, action_items',
+  },
   audio_file_url: {
     type: DataTypes.STRING(500),
     allowNull: true,

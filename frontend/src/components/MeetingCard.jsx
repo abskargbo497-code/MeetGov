@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ClockIcon, LocationIcon, UserIcon } from './icons';
 import './MeetingCard.css';
 
 const MeetingCard = ({ meeting }) => {
@@ -19,9 +20,21 @@ const MeetingCard = ({ meeting }) => {
       scheduled: 'status-scheduled',
       'in-progress': 'status-in-progress',
       completed: 'status-completed',
+      rescheduled: 'status-rescheduled',
       cancelled: 'status-cancelled',
     };
     return statusClasses[status] || 'status-scheduled';
+  };
+
+  const getStatusLabel = (status) => {
+    const statusLabels = {
+      scheduled: 'Scheduled',
+      'in-progress': 'In Progress',
+      completed: 'Completed',
+      rescheduled: 'Rescheduled',
+      cancelled: 'Cancelled',
+    };
+    return statusLabels[status] || status;
   };
 
   return (
@@ -29,35 +42,40 @@ const MeetingCard = ({ meeting }) => {
       <div className="meeting-card-header">
         <h3 className="meeting-card-title">{meeting.title}</h3>
         <span className={`meeting-card-status ${getStatusBadge(meeting.status)}`}>
-          {meeting.status}
+          {getStatusLabel(meeting.status)}
         </span>
       </div>
       <div className="meeting-card-body">
-        <p className="meeting-card-datetime">
-          📅 {formatDate(meeting.datetime)}
-        </p>
+        <div className="meeting-card-datetime">
+          <ClockIcon className="meeting-card-icon" />
+          <span>{formatDate(meeting.datetime)}</span>
+        </div>
         {meeting.location && (
-          <p className="meeting-card-location">📍 {meeting.location}</p>
+          <div className="meeting-card-location">
+            <LocationIcon className="meeting-card-icon" />
+            <span>{meeting.location}</span>
+          </div>
         )}
         {meeting.description && (
           <p className="meeting-card-description">{meeting.description}</p>
         )}
         {meeting.organizer_id && (
-          <p className="meeting-card-organizer">
-            👤 Organizer: {meeting.organizer_id.name || meeting.organizer_id.email}
-          </p>
+          <div className="meeting-card-organizer">
+            <UserIcon className="meeting-card-icon" />
+            <span>Organizer: {meeting.organizer_id.name || meeting.organizer_id.email}</span>
+          </div>
         )}
       </div>
       <div className="meeting-card-footer">
         <Link
-          to={`/meetings/${meeting._id}`}
+          to={`/meetings/${meeting.id || meeting._id}`}
           className="meeting-card-link"
         >
           View Details
         </Link>
         {meeting.qr_code_url && (
           <Link
-            to={`/meetings/${meeting._id}/qr`}
+            to={`/meetings/${meeting.id || meeting._id}/qr`}
             className="meeting-card-link"
           >
             View QR Code

@@ -1,0 +1,64 @@
+feat: Complete backend stability fixes, new API endpoints, and frontend improvements
+
+## Backend Fixes
+
+### Critical Bug Fixes
+- Fix duplicate Sequelize association alias error (GuestInvite model)
+- Fix Sequelize association aliases in reports API (transcripts -> transcript)
+- Improve error handling in registration endpoint with comprehensive try-catch
+
+### New API Endpoints
+- Add Notifications API (/api/notifications) with 5 endpoints
+- Add Reports API (/api/reports) with PDF/JSON generation
+- Add reportService.js for PDFKit integration
+
+### Dependencies
+- Add pdfkit@^0.14.0 for PDF reports
+- Add nodemailer@^6.9.7 for email notifications
+
+### Documentation
+- Add DEBUGGING_GUIDE.md, FEATURES_IMPLEMENTATION.md
+- Add CRASH_FIX_SUMMARY.md, REGISTRATION_FIX.md
+- Add create-env.js interactive setup script
+
+## Frontend Fixes
+
+- Fix missing CheckIcon export in icons.jsx
+- Improve network error handling in AuthContext
+- Fix role check (administrator -> super_admin)
+- Add ICON_IMPORT_FIX.md, NETWORK_ERROR_FIX.md
+
+## Documentation
+
+- Complete README.md overhaul with current project structure
+- Add all new API endpoints and features
+- Add admin credentials section
+- Update setup instructions
+
+## Files Changed
+
+Backend:
+- src/api/notifications.js (NEW)
+- src/api/reports.js (NEW)
+- src/services/reportService.js (NEW)
+- src/api/auth.js (MODIFIED)
+- src/models/GuestInvite.js (MODIFIED)
+- src/server.js (MODIFIED)
+- package.json (MODIFIED)
+
+Frontend:
+- src/components/icons.jsx (MODIFIED)
+- src/context/AuthContext.jsx (MODIFIED)
+
+Root:
+- README.md (MAJOR UPDATE)
+
+## Impact
+
+- Server stability improved (no more crashes)
+- New features: Notifications, Reports APIs
+- Better error handling and user experience
+- Complete documentation
+
+Breaking Changes: None
+
