@@ -47,12 +47,25 @@ const MeetingDetail = () => {
     fetchTasks();
     
     // Set up interval to refresh meeting status periodically (for auto-status updates)
-    const statusInterval = setInterval(() => {
-      fetchMeeting();
-    }, 30000); // Refresh every 30 seconds
+    // Only refresh if WebSocket is not connected (fallback mechanism)
+    // If WebSocket is connected, it handles real-time updates, so we don't need frequent polling
+    let statusInterval = null;
+    if (!isConnected) {
+      statusInterval = setInterval(() => {
+        // Only refresh if not currently loading to avoid conflicts
+        fetchMeeting().catch((err) => {
+          console.error('Error refreshing meeting status:', err);
+          // Don't reload page on error, just log it
+        });
+      }, 60000); // Refresh every 1 minute if WebSocket is not connected
+    }
     
-    return () => clearInterval(statusInterval);
-  }, [id]);
+    return () => {
+      if (statusInterval) {
+        clearInterval(statusInterval);
+      }
+    };
+  }, [id, isConnected]); // Include isConnected in dependencies
 
   // Listen for real-time updates via WebSocket
   useEffect(() => {
@@ -104,6 +117,8 @@ const MeetingDetail = () => {
         setError(result.error || 'Failed to fetch meeting');
       }
     } catch (err) {
+      // Don't reload page on fetch errors, just log and show error
+      console.error('Error fetching meeting:', err);
       setError('Failed to fetch meeting');
       console.error('Error fetching meeting:', err);
     } finally {

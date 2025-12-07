@@ -8,6 +8,8 @@ export const config = {
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 3306,
     username: process.env.DB_USER || 'root',
+    // Handle empty password - if DB_PASSWORD is empty or not set, use empty string
+    // For XAMPP, root user often has no password (empty string)
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'meet_gov',
     dialect: 'mysql',

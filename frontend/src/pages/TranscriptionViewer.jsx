@@ -131,11 +131,12 @@ const TranscriptionViewer = () => {
             </div>
           )}
 
-          {(transcript.summary_text || transcript.action_items_json) && (
+          {(transcript.summary_text || transcript.action_items_json || transcript.summary_json) && (
             <SummaryPanel
-              summary={transcript.summary_text}
-              actionItems={transcript.action_items_json}
-              minutes={transcript.minutes_formatted}
+              summary={transcript.summary_text || transcript.summary_json?.summary}
+              actionItems={transcript.action_items_json || transcript.summary_json?.actionItems}
+              minutes={transcript.minutes_formatted || transcript.summary_json?.minutes}
+              rawText={transcript.raw_text}
             />
           )}
         </div>
