@@ -8,6 +8,7 @@ import { connectDatabase, sequelize } from './database/connection.js';
 import './models/index.js'; // Import models to register associations
 import { seedAdmin } from './scripts/seedAdmin.js';
 import { initializeSocketIO } from './services/socketService.js';
+import { initializeStatusChecker } from './services/meetingStatusService.js';
 
 // Import routes
 import authRoutes from './api/auth.js';
@@ -91,6 +92,9 @@ connectDatabase()
     // Initialize Socket.IO for real-time features
     initializeSocketIO(httpServer);
     
+    // Initialize automatic meeting status checker (checks every minute)
+    initializeStatusChecker(60000); // 60 seconds
+    
     // Start server - listen on all interfaces (0.0.0.0) to accept connections from any IP
     httpServer.listen(config.port, '0.0.0.0', () => {
       log.info(`Server running on http://0.0.0.0:${config.port}`);
@@ -98,6 +102,7 @@ connectDatabase()
       log.info(`Environment: ${config.nodeEnv}`);
       log.info(`CORS: Enabled for all origins`);
       log.info(`WebSocket: Enabled for real-time updates`);
+      log.info(`Meeting Status Checker: Enabled (checks every 60 seconds)`);
     });
   })
   .catch((error) => {

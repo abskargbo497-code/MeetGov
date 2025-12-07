@@ -81,11 +81,94 @@
 .minutes-review-empty,
 .minutes-review-placeholder {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 400px;
   color: #999;
   font-style: italic;
+}
+
+.minutes-review-placeholder-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.minutes-review-meeting-header {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid #ddd;
+}
+
+.minutes-review-meeting-info {
+  margin-bottom: 1rem;
+}
+
+.minutes-review-meeting-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.75rem;
+}
+
+.minutes-review-meeting-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.minutes-review-meeting-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.minutes-review-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.minutes-review-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.minutes-review-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.minutes-review-btn-primary {
+  background: #2979FF;
+  color: white;
+}
+
+.minutes-review-btn-primary:hover:not(:disabled) {
+  background: #1a5fd9;
+}
+
+.minutes-review-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.minutes-review-btn-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .minutes-review-error {

@@ -17,6 +17,8 @@ import {
   extractRealtimeActionItems,
 } from '../services/liveTranscriptionService.js';
 import { emitLiveTranscription } from '../services/socketService.js';
+import { startMeeting, stopMeeting } from '../services/meetingStatusService.js';
+import { generateAutoSummaryAndTickets } from '../services/autoSummaryService.js';
 
 const router = express.Router();
 
@@ -41,9 +43,23 @@ router.post(
       return errorResponse(res, 404, 'Meeting not found');
     }
 
-    // Check if meeting is in progress
-    if (meeting.status !== 'in-progress') {
-      return errorResponse(res, 400, 'Meeting must be in-progress to start live transcription');
+    // Auto-start meeting if it's still scheduled
+    if (meeting.status === 'scheduled') {
+      try {
+        // startMeeting already saves the meeting to database, so use the returned instance
+        meeting = await startMeeting(meetingId, req.user.userId);
+        log.info('Meeting auto-started when live transcription began', { meetingId });
+      } catch (error) {
+        log.warn('Failed to auto-start meeting', { meetingId, error: error.message });
+        // If auto-start fails, we should still allow transcription if meeting is in-progress
+        // Reload meeting to get current status
+        meeting = await Meeting.findByPk(meetingId);
+      }
+    }
+
+    // Check if meeting can be transcribed
+    if (meeting.status === 'completed' || meeting.status === 'cancelled') {
+      return errorResponse(res, 400, 'Cannot start transcription for completed or cancelled meeting');
     }
 
     // Initialize or get existing transcript
@@ -105,20 +121,55 @@ router.post(
     }
 
     try {
+      // Validate audio data
+      if (!audioData || audioData.length === 0) {
+        log.warn('Empty audio data received', { meetingId });
+        return successResponse(res, 200, {
+          transcribed: '',
+          message: 'Empty audio chunk received',
+        });
+      }
+
       // Convert base64 audio data to buffer
-      const audioBuffer = Buffer.from(audioData, 'base64');
+      let audioBuffer;
+      try {
+        audioBuffer = Buffer.from(audioData, 'base64');
+        if (audioBuffer.length === 0) {
+          log.warn('Empty audio buffer after conversion', { meetingId });
+          return successResponse(res, 200, {
+            transcribed: '',
+            message: 'Invalid audio data',
+          });
+        }
+      } catch (bufferError) {
+        log.error('Error converting base64 to buffer', {
+          meetingId,
+          error: bufferError.message,
+        });
+        return errorResponse(res, 400, 'Invalid audio data format');
+      }
+
+      log.debug('Processing audio chunk', {
+        meetingId,
+        bufferSize: audioBuffer.length,
+        mimeType,
+      });
 
       // Transcribe audio chunk
       const transcribedText = await transcribeAudioChunk(audioBuffer, mimeType);
 
       if (transcribedText && transcribedText.trim()) {
-        // Accumulate transcript
+        const timestamp = new Date();
+        // Accumulate transcript with timestamp
         activeSession.accumulatedText += ' ' + transcribedText;
         activeSession.lastUpdate = Date.now();
 
         // Update transcript in database (async, don't wait)
         Transcript.update(
-          { raw_text: activeSession.accumulatedText },
+          { 
+            raw_text: activeSession.accumulatedText,
+            updated_at: timestamp,
+          },
           { where: { id: activeSession.transcriptId } }
         ).catch((err) => {
           log.error('Error updating transcript', { error: err.message });
@@ -143,7 +194,7 @@ router.post(
         // Emit live transcription to all meeting participants via WebSocket
         emitLiveTranscription(meetingId, transcribedText, summary);
 
-        log.debug('Audio chunk transcribed', {
+        log.debug('Audio chunk transcribed successfully', {
           meetingId,
           chunkLength: transcribedText.length,
           totalLength: activeSession.accumulatedText.length,
@@ -155,6 +206,7 @@ router.post(
           accumulatedLength: activeSession.accumulatedText.length,
         }, 'Audio chunk transcribed successfully');
       } else {
+        log.debug('No speech detected in audio chunk', { meetingId });
         return successResponse(res, 200, {
           transcribed: '',
           message: 'No speech detected in audio chunk',
@@ -164,6 +216,7 @@ router.post(
       log.error('Error transcribing audio chunk', {
         meetingId,
         error: error.message,
+        stack: error.stack,
       });
       return errorResponse(res, 500, `Transcription failed: ${error.message}`);
     }
@@ -203,6 +256,28 @@ router.post(
       // Remove active session
       activeTranscriptions.delete(meetingId);
 
+      // Auto-stop meeting if it's still in-progress
+      const updatedMeeting = await Meeting.findByPk(meetingId);
+      if (updatedMeeting && updatedMeeting.status === 'in-progress') {
+        try {
+          await stopMeeting(meetingId, req.user.userId);
+          
+          // Trigger auto-summary and ticket generation
+          try {
+            await generateAutoSummaryAndTickets(meetingId);
+          } catch (error) {
+            log.error('Failed to generate auto-summary after transcription stop', {
+              meetingId,
+              error: error.message,
+            });
+          }
+          
+          log.info('Meeting auto-stopped when live transcription ended', { meetingId });
+        } catch (error) {
+          log.warn('Failed to auto-stop meeting', { meetingId, error: error.message });
+        }
+      }
+
       log.info('Live transcription stopped', {
         meetingId,
         transcriptId: transcript.id,
@@ -214,7 +289,7 @@ router.post(
         transcriptId: transcript.id,
         finalLength: activeSession.accumulatedText.length,
         status: 'stopped',
-      }, 'Live transcription stopped and saved');
+      }, 'Live transcription stopped and saved. Meeting completed and summary generated.');
     } catch (error) {
       log.error('Error stopping live transcription', {
         meetingId,

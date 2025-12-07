@@ -1,64 +1,28 @@
-feat: Complete backend stability fixes, new API endpoints, and frontend improvements
+feat: Live transcription, minutes review, and critical bug fixes
 
-## Backend Fixes
+Major Features:
+- Implemented live audio recording with real-time transcription
+- Enhanced Minutes Review page with meeting selection and report generation
+- Added automatic PDF/HTML report generation for completed meetings
+- Removed all emojis and replaced with professional SVG icons
 
-### Critical Bug Fixes
-- Fix duplicate Sequelize association alias error (GuestInvite model)
-- Fix Sequelize association aliases in reports API (transcripts -> transcript)
-- Improve error handling in registration endpoint with comprehensive try-catch
+Bug Fixes:
+- Fixed Transcript model validation to allow empty strings for live transcription
+- Fixed meeting status persistence when auto-starting during transcription
+- Replaced dynamic imports with top-level imports for consistency
+- Fixed LiveTranscript component to allow recording when transcription inactive
+- Improved error handling and user feedback messages
 
-### New API Endpoints
-- Add Notifications API (/api/notifications) with 5 endpoints
-- Add Reports API (/api/reports) with PDF/JSON generation
-- Add reportService.js for PDFKit integration
+Technical Improvements:
+- Enhanced audio chunk processing with validation
+- Added automatic transcription start/stop on recording
+- Improved WebSocket integration for real-time updates
+- Better error messages distinguishing microphone vs backend errors
 
-### Dependencies
-- Add pdfkit@^0.14.0 for PDF reports
-- Add nodemailer@^6.9.7 for email notifications
+Files Modified:
+- Backend: Transcript model, liveTranscription API, meeting API, transcription API
+- Frontend: LiveTranscript component, MinutesReview page, MeetingDetail, SummaryPanel
+- Styles: Added new CSS for inactive notices, meeting headers, report buttons
 
-### Documentation
-- Add DEBUGGING_GUIDE.md, FEATURES_IMPLEMENTATION.md
-- Add CRASH_FIX_SUMMARY.md, REGISTRATION_FIX.md
-- Add create-env.js interactive setup script
-
-## Frontend Fixes
-
-- Fix missing CheckIcon export in icons.jsx
-- Improve network error handling in AuthContext
-- Fix role check (administrator -> super_admin)
-- Add ICON_IMPORT_FIX.md, NETWORK_ERROR_FIX.md
-
-## Documentation
-
-- Complete README.md overhaul with current project structure
-- Add all new API endpoints and features
-- Add admin credentials section
-- Update setup instructions
-
-## Files Changed
-
-Backend:
-- src/api/notifications.js (NEW)
-- src/api/reports.js (NEW)
-- src/services/reportService.js (NEW)
-- src/api/auth.js (MODIFIED)
-- src/models/GuestInvite.js (MODIFIED)
-- src/server.js (MODIFIED)
-- package.json (MODIFIED)
-
-Frontend:
-- src/components/icons.jsx (MODIFIED)
-- src/context/AuthContext.jsx (MODIFIED)
-
-Root:
-- README.md (MAJOR UPDATE)
-
-## Impact
-
-- Server stability improved (no more crashes)
-- New features: Notifications, Reports APIs
-- Better error handling and user experience
-- Complete documentation
-
-Breaking Changes: None
-
+This commit ensures live transcription works end-to-end, minutes are properly
+displayed, and all critical bugs are resolved for production readiness.

@@ -138,15 +138,19 @@ export const extractRealtimeActionItems = async (transcriptText) => {
       return [];
     }
 
-    const systemPrompt = `Extract action items from the meeting transcript. Return as JSON array:
-[
-  {
-    "title": "Action item title",
-    "description": "Description",
-    "assigned_to": "Name or TBD",
-    "deadline": "YYYY-MM-DD or null"
-  }
-]`;
+    const systemPrompt = `Extract action items from the meeting transcript. Return a JSON object with an "actionItems" array property:
+{
+  "actionItems": [
+    {
+      "title": "Action item title",
+      "description": "Description",
+      "assigned_to": "Name or TBD",
+      "deadline": "YYYY-MM-DD or null"
+    }
+  ]
+}
+
+Return an empty array if no action items are found.`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -160,7 +164,22 @@ export const extractRealtimeActionItems = async (transcriptText) => {
     });
 
     const result = JSON.parse(completion.choices[0].message.content);
-    return Array.isArray(result.actionItems) ? result.actionItems : [];
+    
+    // Handle both possible response formats for robustness
+    if (Array.isArray(result)) {
+      // If AI returns array directly (shouldn't happen with json_object, but handle it)
+      return result;
+    } else if (Array.isArray(result.actionItems)) {
+      // Expected format: object with actionItems property
+      return result.actionItems;
+    } else if (result.actionItems && typeof result.actionItems === 'object') {
+      // Handle case where actionItems might be a single object instead of array
+      return [result.actionItems];
+    }
+    
+    // Fallback: return empty array
+    log.warn('Unexpected action items response format', { result });
+    return [];
   } catch (error) {
     log.error('Error extracting real-time action items', {
       error: error.message,

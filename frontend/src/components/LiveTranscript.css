@@ -214,6 +214,26 @@
   opacity: 0.5;
 }
 
+.live-transcript-status-inactive {
+  background: rgba(158, 158, 158, 0.1);
+  color: var(--text-muted);
+}
+
+.live-transcript-inactive-notice {
+  background: rgba(100, 181, 246, 0.1);
+  border: 1px solid var(--light-blue);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.live-transcript-inactive-notice p {
+  margin: 0;
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .live-transcript {

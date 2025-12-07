@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import Task from '../models/Task.js';
 import Meeting from '../models/Meeting.js';
 import User from '../models/User.js';
+import { authenticateToken } from '../utils/jwt.js';
 import { sendTaskAssignment, sendTaskReminder } from '../services/notificationService.js';
 import { asyncHandler, errorResponse, successResponse } from '../utils/helpers.js';
 import { log } from '../utils/logger.js';
@@ -76,6 +77,7 @@ router.post(
  */
 router.get(
   '/',
+  authenticateToken,
   asyncHandler(async (req, res) => {
     const { status, assigned_to, meeting_id, overdue } = req.query;
     const where = {};

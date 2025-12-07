@@ -24,11 +24,9 @@ const Transcript = sequelize.define('Transcript', {
   raw_text: {
     type: DataTypes.TEXT,
     allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Raw transcript text is required',
-      },
-    },
+    defaultValue: '',
+    // Note: Empty string is allowed for live transcription (text is populated incrementally)
+    // The notEmpty validation is removed to support real-time transcription workflows
   },
   summary_text: {
     type: DataTypes.TEXT,

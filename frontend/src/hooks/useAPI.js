@@ -24,6 +24,9 @@ export const useAPI = () => {
         case 'put':
           response = await api.put(url, data, config);
           break;
+        case 'patch':
+          response = await api.patch(url, data, config);
+          break;
         case 'delete':
           response = await api.delete(url, config);
           break;
@@ -33,10 +36,22 @@ export const useAPI = () => {
 
       return { success: true, data: response.data };
     } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || err.message || 'An error occurred';
+      // Enhanced error handling
+      let errorMessage = 'An error occurred';
+      
+      if (err.message === 'Network Error' || err.code === 'ECONNABORTED') {
+        errorMessage = 'Network error: Cannot connect to server. Please check if the backend is running.';
+      } else if (err.response) {
+        // Server responded with error status
+        errorMessage = err.response.data?.message || 
+                      err.response.data?.error || 
+                      `Server error: ${err.response.status} ${err.response.statusText}`;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
       setError(errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, originalError: err };
     } finally {
       setLoading(false);
     }
@@ -45,6 +60,7 @@ export const useAPI = () => {
   const get = useCallback((url, config) => request('get', url, null, config), [request]);
   const post = useCallback((url, data, config) => request('post', url, data, config), [request]);
   const put = useCallback((url, data, config) => request('put', url, data, config), [request]);
+  const patch = useCallback((url, data, config) => request('patch', url, data, config), [request]);
   const del = useCallback((url, config) => request('delete', url, null, config), [request]);
 
   return {
@@ -54,6 +70,7 @@ export const useAPI = () => {
     get,
     post,
     put,
+    patch,
     delete: del,
   };
 };

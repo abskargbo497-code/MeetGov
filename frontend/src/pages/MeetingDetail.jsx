@@ -10,7 +10,7 @@ import { useAPI } from '../hooks/useAPI';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../hooks/useSocket';
 import LiveTranscript from '../components/LiveTranscript';
-import { WarningIcon, CheckIcon, UserIcon, CalendarIcon } from '../components/icons';
+import { WarningIcon, CheckIcon, UserIcon, CalendarIcon, TaskIcon } from '../components/icons';
 import './MeetingDetail.css';
 
 const MeetingDetail = () => {
@@ -27,6 +27,10 @@ const MeetingDetail = () => {
   const [attendance, setAttendance] = useState([]);
   const [liveTranscriptionActive, setLiveTranscriptionActive] = useState(false);
   const [isStartingTranscription, setIsStartingTranscription] = useState(false);
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [startingMeeting, setStartingMeeting] = useState(false);
+  const [stoppingMeeting, setStoppingMeeting] = useState(false);
 
   const statusOptions = [
     { value: 'scheduled', label: 'Scheduled' },
@@ -40,6 +44,14 @@ const MeetingDetail = () => {
     fetchMeeting();
     fetchAttendance();
     checkLiveTranscriptionStatus();
+    fetchTasks();
+    
+    // Set up interval to refresh meeting status periodically (for auto-status updates)
+    const statusInterval = setInterval(() => {
+      fetchMeeting();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(statusInterval);
   }, [id]);
 
   // Listen for real-time updates via WebSocket
@@ -61,6 +73,14 @@ const MeetingDetail = () => {
     const handleStatusUpdate = (data) => {
       if (data.meetingId === parseInt(id)) {
         setMeeting((prev) => (prev ? { ...prev, status: data.status } : null));
+        // Refresh meeting data and tasks when status changes
+        fetchMeeting();
+        if (data.status === 'completed') {
+          // Wait a bit for backend to generate summary and tickets
+          setTimeout(() => {
+            fetchTasks();
+          }, 2000);
+        }
       }
     };
 
@@ -154,15 +174,117 @@ const MeetingDetail = () => {
       if (result.success) {
         setMeeting(result.data.data.meeting);
         setStatusMessage('Meeting status updated successfully');
-        setTimeout(() => setStatusMessage(''), 3000);
+        setTimeout(() => {
+          setStatusMessage('');
+          fetchMeeting(); // Refresh meeting data
+          // Refresh tasks if meeting was completed
+          if (newStatus === 'completed') {
+            // Wait a bit for backend to generate summary and tickets
+            setTimeout(() => {
+              fetchTasks();
+            }, 2000);
+          }
+        }, 3000);
       } else {
-        setError(result.error || 'Failed to update status');
+        // Extract error message from response
+        const errorMsg = result.error || result.data?.message || 'Failed to update status';
+        setError(errorMsg);
+        console.error('Status update error:', result);
       }
     } catch (err) {
-      setError('Failed to update meeting status');
+      // Better error handling
+      const errorMsg = err.response?.data?.message || 
+                      err.response?.data?.error || 
+                      err.message || 
+                      'Failed to update meeting status';
+      setError(errorMsg);
       console.error('Error updating status:', err);
+      if (err.response?.data?.errors) {
+        console.error('Validation errors:', err.response.data.errors);
+      }
     } finally {
       setStatusLoading(false);
+    }
+  };
+
+  const handleStartMeeting = async () => {
+    if (!isAdminOrSecretary()) {
+      setError('Only Administrators and Secretaries can start meetings');
+      return;
+    }
+
+    setStartingMeeting(true);
+    setError('');
+    setStatusMessage('');
+
+    try {
+      const result = await post(`/meetings/${id}/start`, {});
+      if (result.success) {
+        setMeeting(result.data.data.meeting);
+        setStatusMessage('Meeting started successfully');
+        setTimeout(() => {
+          setStatusMessage('');
+          fetchMeeting(); // Refresh to get latest status
+        }, 3000);
+      } else {
+        setError(result.error || 'Failed to start meeting');
+      }
+    } catch (err) {
+      setError('Failed to start meeting');
+      console.error('Error starting meeting:', err);
+    } finally {
+      setStartingMeeting(false);
+    }
+  };
+
+  const handleStopMeeting = async () => {
+    if (!isAdminOrSecretary()) {
+      setError('Only Administrators and Secretaries can stop meetings');
+      return;
+    }
+
+    setStoppingMeeting(true);
+    setError('');
+    setStatusMessage('');
+
+    try {
+      const result = await post(`/meetings/${id}/stop`, {});
+      if (result.success) {
+        setMeeting(result.data.data.meeting);
+        setStatusMessage('Meeting stopped. Summary and tickets are being generated...');
+        setTimeout(() => {
+          setStatusMessage('');
+          fetchTasks(); // Refresh tasks after generation
+          fetchMeeting(); // Refresh meeting to get updated transcript
+        }, 3000);
+      } else {
+        setError(result.error || 'Failed to stop meeting');
+      }
+    } catch (err) {
+      setError('Failed to stop meeting');
+      console.error('Error stopping meeting:', err);
+    } finally {
+      setStoppingMeeting(false);
+    }
+  };
+
+  const fetchTasks = async () => {
+    setLoadingTasks(true);
+    try {
+      const result = await get(`/tasks?meeting_id=${id}`);
+      if (result.success) {
+        // Ensure assignedTo is properly handled
+        const tasksWithSafeData = (result.data.data.tasks || []).map(task => ({
+          ...task,
+          assignedTo: task.assignedTo || task.assigned_to || null,
+        }));
+        setTasks(tasksWithSafeData);
+      }
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      setTasks([]); // Set empty array on error
+    } finally {
+      setLoadingTasks(false);
     }
   };
 
@@ -260,6 +382,30 @@ const MeetingDetail = () => {
         <div className="meeting-detail-main">
           <h1 className="meeting-detail-title">{meeting.title}</h1>
 
+          {/* Quick Actions - Start/Stop Meeting - Admin/Secretary Only */}
+          {isAdminOrSecretary() && (
+            <div className="meeting-detail-quick-actions">
+              {meeting.status === 'scheduled' && (
+                <button
+                  onClick={handleStartMeeting}
+                  disabled={startingMeeting}
+                  className="meeting-detail-btn meeting-detail-btn-primary meeting-detail-btn-large"
+                >
+                  {startingMeeting ? 'Starting...' : '▶ Start Meeting'}
+                </button>
+              )}
+              {meeting.status === 'in-progress' && (
+                <button
+                  onClick={handleStopMeeting}
+                  disabled={stoppingMeeting}
+                  className="meeting-detail-btn meeting-detail-btn-danger meeting-detail-btn-large"
+                >
+                  {stoppingMeeting ? 'Stopping...' : '⏹ Stop Meeting & Generate Summary'}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Status Management Section - Admin/Secretary Only */}
           {isAdminOrSecretary() && (
             <div className="meeting-detail-status-section">
@@ -315,22 +461,33 @@ const MeetingDetail = () => {
             </div>
           )}
 
-          {/* Live Transcription Section */}
-          {meeting.status === 'in-progress' && (
+          {/* Live Transcription Section - Show for scheduled and in-progress meetings */}
+          {(meeting.status === 'scheduled' || meeting.status === 'in-progress') && (
             <div className="meeting-detail-section">
               <div className="meeting-detail-section-header">
                 <h2 className="meeting-detail-section-title">Live Transcription</h2>
-                {isAdminOrSecretary() && !liveTranscriptionActive && (
-                  <button
-                    onClick={handleStartLiveTranscription}
-                    disabled={isStartingTranscription}
-                    className="meeting-detail-btn meeting-detail-btn-primary"
-                  >
-                    {isStartingTranscription ? 'Starting...' : 'Start Live Transcription'}
-                  </button>
+                {isAdminOrSecretary() && (
+                  <>
+                    {meeting.status === 'scheduled' && (
+                      <p className="meeting-detail-info-value" style={{ marginBottom: '1rem' }}>
+                        Start the meeting first to begin live transcription.
+                      </p>
+                    )}
+                    {meeting.status === 'in-progress' && !liveTranscriptionActive && (
+                      <button
+                        onClick={handleStartLiveTranscription}
+                        disabled={isStartingTranscription}
+                        className="meeting-detail-btn meeting-detail-btn-primary"
+                      >
+                        {isStartingTranscription ? 'Starting...' : 'Start Recording'}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
-              <LiveTranscript meetingId={id} isActive={liveTranscriptionActive} />
+              {meeting.status === 'in-progress' && (
+                <LiveTranscript meetingId={id} isActive={liveTranscriptionActive} />
+              )}
             </div>
           )}
 
@@ -385,6 +542,52 @@ const MeetingDetail = () => {
               <p className="meeting-detail-info-value">No attendance recorded yet.</p>
             )}
           </div>
+
+          {/* Action Items / Tickets Section */}
+          {(meeting.status === 'completed' || tasks.length > 0) && (
+            <div className="meeting-detail-section">
+              <div className="meeting-detail-section-header">
+                <h2 className="meeting-detail-section-title">
+                  <TaskIcon className="meeting-detail-section-icon" />
+                  Action Items & Tickets ({tasks.length})
+                </h2>
+              </div>
+              {loadingTasks ? (
+                <p className="meeting-detail-info-value">Loading action items...</p>
+              ) : tasks.length > 0 ? (
+                <div className="meeting-action-items-list">
+                  {tasks.map((task) => (
+                    <div key={task.id} className="meeting-action-item">
+                      <div className="meeting-action-item-header">
+                        <h3 className="meeting-action-item-title">{task.title}</h3>
+                        <span className={`meeting-action-item-status status-${task.status}`}>
+                          {task.status}
+                        </span>
+                      </div>
+                      {task.description && (
+                        <p className="meeting-action-item-description">{task.description}</p>
+                      )}
+                      <div className="meeting-action-item-meta">
+                        <span className="meeting-action-item-assigned">
+                          Assigned to: {task.assignedTo?.name || task.assignedTo?.email || 'Unassigned'}
+                        </span>
+                        <span className="meeting-action-item-deadline">
+                          Deadline: {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'Not set'}
+                        </span>
+                        <span className={`meeting-action-item-priority priority-${task.priority || 'medium'}`}>
+                          {task.priority || 'medium'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="meeting-detail-info-value">
+                  No action items yet. They will be automatically generated when the meeting is completed.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

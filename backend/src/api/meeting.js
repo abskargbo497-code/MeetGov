@@ -10,6 +10,8 @@ import GuestInvite from '../models/GuestInvite.js';
 import { generateQRCode, generateQRToken } from '../services/qrService.js';
 import { sendGuestInvitation, sendMeetingSummary } from '../services/emailService.js';
 import { emitAttendanceUpdate, emitMeetingStatusUpdate, emitTaskUpdate } from '../services/socketService.js';
+import { startMeeting, stopMeeting } from '../services/meetingStatusService.js';
+import { generateAutoSummaryAndTickets } from '../services/autoSummaryService.js';
 import { asyncHandler, errorResponse, successResponse } from '../utils/helpers.js';
 import { authenticateToken } from '../utils/jwt.js';
 import {
@@ -83,55 +85,76 @@ router.get(
   authenticateToken,
   allowAuthenticatedUsers,
   asyncHandler(async (req, res) => {
-    const { status, organizer_id } = req.query;
-    const where = {};
+    try {
+      const { status, organizer_id } = req.query;
+      const where = {};
 
-    // Officials can only see meetings they're participants of
-    if (req.user.role === 'official') {
-      // Get meetings where user is organizer or participant
-      const meetingsAsOrganizer = await Meeting.findAll({
-        where: { organizer_id: req.user.userId },
-        attributes: ['id'],
+      // Officials can only see meetings they're participants of
+      if (req.user.role === 'official') {
+        // Get meetings where user is organizer or participant
+        const meetingsAsOrganizer = await Meeting.findAll({
+          where: { organizer_id: req.user.userId },
+          attributes: ['id'],
+        });
+        const meetingIds = meetingsAsOrganizer.map(m => m.id);
+
+        // Get meetings where user has attendance
+        const attendances = await Attendance.findAll({
+          where: { user_id: req.user.userId },
+          attributes: ['meeting_id'],
+        });
+        const attendanceMeetingIds = attendances.map(a => a.meeting_id).filter(id => id !== null);
+
+        // Combine all meeting IDs user can access
+        const accessibleMeetingIds = [...new Set([...meetingIds, ...attendanceMeetingIds])];
+
+        if (accessibleMeetingIds.length === 0) {
+          return successResponse(res, 200, { meetings: [] });
+        }
+
+        where.id = { [Op.in]: accessibleMeetingIds };
+        
+        // Officials can also filter by status if provided
+        if (status) {
+          where.status = status;
+        }
+      } else {
+        // Admin and Secretary can see all meetings
+        if (status) {
+          where.status = status;
+        }
+
+        if (organizer_id) {
+          where.organizer_id = parseInt(organizer_id);
+        }
+      }
+
+      const meetings = await Meeting.findAll({
+        where,
+        include: [{
+          model: User,
+          as: 'organizer',
+          attributes: ['id', 'name', 'email', 'department'],
+        }],
+        order: [['datetime', 'DESC']],
       });
-      const meetingIds = meetingsAsOrganizer.map(m => m.id);
 
-      // Get meetings where user has attendance
-      const attendances = await Attendance.findAll({
-        where: { user_id: req.user.userId },
-        attributes: ['meeting_id'],
+      log.info('Meetings fetched successfully', {
+        userId: req.user.userId,
+        role: req.user.role,
+        count: meetings.length,
+        status: status || 'all',
       });
-      const attendanceMeetingIds = attendances.map(a => a.meeting_id);
 
-      // Combine all meeting IDs user can access
-      const accessibleMeetingIds = [...new Set([...meetingIds, ...attendanceMeetingIds])];
-
-      if (accessibleMeetingIds.length === 0) {
-        return successResponse(res, 200, { meetings: [] });
-      }
-
-      where.id = { [Op.in]: accessibleMeetingIds };
-    } else {
-      // Admin and Secretary can see all meetings
-      if (status) {
-        where.status = status;
-      }
-
-      if (organizer_id) {
-        where.organizer_id = organizer_id;
-      }
+      return successResponse(res, 200, { meetings });
+    } catch (error) {
+      log.error('Error fetching meetings', {
+        error: error.message,
+        stack: error.stack,
+        userId: req.user?.userId,
+      });
+      throw error; // Let asyncHandler handle it
     }
-
-    const meetings = await Meeting.findAll({
-      where,
-      include: [{
-        model: User,
-        as: 'organizer',
-        attributes: ['id', 'name', 'email'],
-      }],
-      order: [['datetime', 'DESC']],
-    });
-
-    return successResponse(res, 200, { meetings });
   })
 );
 
@@ -415,8 +438,20 @@ router.patch(
       updatedBy: req.user.userId,
     });
 
-    // If meeting is marked as completed, send automatic emails
+    // If meeting is marked as completed, trigger auto-summary and ticket generation
     if (status === 'completed' && previousStatus !== 'completed') {
+      try {
+        // Generate automatic summary and create tickets from action items
+        await generateAutoSummaryAndTickets(meeting.id);
+      } catch (error) {
+        log.error('Failed to generate auto-summary and tickets', {
+          error: error.message,
+          meetingId: meeting.id,
+        });
+        // Don't fail the request if auto-summary fails
+      }
+
+      // Send automatic emails
       try {
         await sendMeetingCompletionEmails(meeting.id);
       } catch (error) {
@@ -431,6 +466,337 @@ router.patch(
     return successResponse(res, 200, { meeting }, 'Meeting status updated successfully');
   })
 );
+
+/**
+ * @route   POST /api/meetings/:id/start
+ * @desc    Start a meeting (change status to in-progress)
+ * @access  Private (super_admin, secretary)
+ */
+router.post(
+  '/:id/start',
+  authenticateToken,
+  allowOnlyAdminOrSecretary,
+  asyncHandler(async (req, res) => {
+    const meetingId = parseInt(req.params.id);
+    const userId = req.user.userId;
+
+    try {
+      const meeting = await startMeeting(meetingId, userId);
+      return successResponse(res, 200, { meeting }, 'Meeting started successfully');
+    } catch (error) {
+      return errorResponse(res, 400, error.message);
+    }
+  })
+);
+
+/**
+ * @route   POST /api/meetings/:id/stop
+ * @desc    Stop a meeting (change status to completed and trigger auto-summary)
+ * @access  Private (super_admin, secretary)
+ */
+router.post(
+  '/:id/stop',
+  authenticateToken,
+  allowOnlyAdminOrSecretary,
+  asyncHandler(async (req, res) => {
+    const meetingId = parseInt(req.params.id);
+    const userId = req.user.userId;
+
+    try {
+      const meeting = await stopMeeting(meetingId, userId);
+
+      // Trigger automatic summary generation and ticket creation
+      try {
+        await generateAutoSummaryAndTickets(meetingId);
+      } catch (error) {
+        log.error('Failed to generate auto-summary and tickets', {
+          error: error.message,
+          meetingId,
+        });
+        // Don't fail the request if auto-summary fails
+      }
+
+      // Send completion emails
+      try {
+        await sendMeetingCompletionEmails(meetingId);
+      } catch (error) {
+        log.error('Failed to send meeting completion emails', {
+          error: error.message,
+          meetingId,
+        });
+      }
+
+      return successResponse(res, 200, { meeting }, 'Meeting stopped successfully. Summary and tickets generated.');
+    } catch (error) {
+      return errorResponse(res, 400, error.message);
+    }
+  })
+);
+
+/**
+ * @route   GET /api/meetings/:id/generate-report
+ * @desc    Generate automatic meeting report (PDF or HTML)
+ * @access  Private (meeting participants)
+ */
+router.get(
+  '/:id/generate-report',
+  authenticateToken,
+  allowMeetingParticipants,
+  asyncHandler(async (req, res) => {
+    const meetingId = parseInt(req.params.id);
+    const format = req.query.format || 'pdf'; // pdf, html, or json
+
+    // Find meeting with all related data
+    const meeting = await Meeting.findByPk(meetingId, {
+      include: [
+        {
+          model: User,
+          as: 'organizer',
+          attributes: ['id', 'name', 'email', 'department'],
+        },
+        {
+          model: Attendance,
+          as: 'attendances',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'name', 'email', 'department'],
+            },
+          ],
+        },
+        {
+          model: Transcript,
+          as: 'transcript',
+        },
+        {
+          model: Task,
+          as: 'tasks',
+          include: [
+            {
+              model: User,
+              as: 'assignedTo',
+              attributes: ['id', 'name', 'email'],
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!meeting) {
+      return errorResponse(res, 404, 'Meeting not found');
+    }
+
+    try {
+      if (format === 'pdf') {
+        const { generatePDFReport } = await import('../services/reportService.js');
+        const pdfBuffer = await generatePDFReport(meeting);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="meeting-report-${meetingId}-${Date.now()}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+
+        log.info('PDF report generated', { meetingId });
+        return res.send(pdfBuffer);
+      } else if (format === 'html') {
+        // Generate HTML report
+        const htmlReport = generateHTMLReport(meeting);
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Content-Disposition', `attachment; filename="meeting-report-${meetingId}.html"`);
+        return res.send(htmlReport);
+      } else {
+        // Return JSON report
+        const report = {
+          meeting: {
+            id: meeting.id,
+            title: meeting.title,
+            datetime: meeting.datetime,
+            location: meeting.location,
+            description: meeting.description,
+            status: meeting.status,
+            organizer: meeting.organizer ? {
+              name: meeting.organizer.name,
+              email: meeting.organizer.email,
+              department: meeting.organizer.department,
+            } : null,
+          },
+          attendance: meeting.attendances ? meeting.attendances.map((att) => ({
+            user: att.user ? {
+              name: att.user.name,
+              email: att.user.email,
+            } : null,
+            checked_in_at: att.checked_in_at,
+            status: att.status,
+          })) : [],
+          transcript: meeting.transcript ? {
+            summary: meeting.transcript.summary_text,
+            key_points: meeting.transcript.summary_json?.key_points || [],
+            decisions: meeting.transcript.summary_json?.decisions || [],
+            raw_text: meeting.transcript.raw_text,
+          } : null,
+          tasks: meeting.tasks ? meeting.tasks.map((task) => ({
+            title: task.title,
+            description: task.description,
+            status: task.status,
+            priority: task.priority,
+            deadline: task.deadline,
+            assigned_to: task.assignedTo ? task.assignedTo.name : 'Unassigned',
+          })) : [],
+        };
+
+        return successResponse(res, 200, { report }, 'Meeting report generated successfully');
+      }
+    } catch (error) {
+      log.error('Error generating meeting report', {
+        meetingId,
+        format,
+        error: error.message,
+        stack: error.stack,
+      });
+      return errorResponse(res, 500, `Failed to generate report: ${error.message}`);
+    }
+  })
+);
+
+/**
+ * Generate HTML report for a meeting
+ */
+const generateHTMLReport = (meeting) => {
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meeting Report - ${meeting.title}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; }
+    h1 { color: #2979FF; border-bottom: 3px solid #2979FF; padding-bottom: 10px; }
+    h2 { color: #00BFA5; margin-top: 30px; }
+    .section { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 8px; }
+    .info-item { margin: 10px 0; }
+    .label { font-weight: bold; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #2979FF; color: white; }
+    .task-item { padding: 10px; margin: 5px 0; background: white; border-left: 4px solid #00BFA5; }
+  </style>
+</head>
+<body>
+  <h1>Meeting Report</h1>
+  
+  <div class="section">
+    <h2>Meeting Information</h2>
+    <div class="info-item"><span class="label">Title:</span> ${meeting.title || 'N/A'}</div>
+    <div class="info-item"><span class="label">Date & Time:</span> ${formatDate(meeting.datetime)}</div>
+    <div class="info-item"><span class="label">Location:</span> ${meeting.location || 'N/A'}</div>
+    <div class="info-item"><span class="label">Status:</span> ${meeting.status || 'N/A'}</div>
+    <div class="info-item"><span class="label">Organizer:</span> ${meeting.organizer ? meeting.organizer.name : 'N/A'}</div>
+  </div>`;
+
+  if (meeting.attendances && meeting.attendances.length > 0) {
+    html += `
+  <div class="section">
+    <h2>Attendance (${meeting.attendances.length})</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Checked In</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    meeting.attendances.forEach((att) => {
+      html += `
+        <tr>
+          <td>${att.user ? att.user.name : 'N/A'}</td>
+          <td>${att.user ? att.user.email : 'N/A'}</td>
+          <td>${att.status || 'N/A'}</td>
+          <td>${att.checked_in_at ? new Date(att.checked_in_at).toLocaleString() : 'N/A'}</td>
+        </tr>`;
+    });
+    html += `
+      </tbody>
+    </table>
+  </div>`;
+  }
+
+  if (meeting.transcript) {
+    html += `
+  <div class="section">
+    <h2>Summary</h2>
+    <p>${meeting.transcript.summary_text || 'No summary available'}</p>`;
+
+    if (meeting.transcript.summary_json?.key_points && meeting.transcript.summary_json.key_points.length > 0) {
+      html += `
+    <h3>Key Points</h3>
+    <ul>`;
+      meeting.transcript.summary_json.key_points.forEach((point) => {
+        html += `<li>${point}</li>`;
+      });
+      html += `</ul>`;
+    }
+
+    if (meeting.transcript.summary_json?.decisions && meeting.transcript.summary_json.decisions.length > 0) {
+      html += `
+    <h3>Decisions Made</h3>
+    <ul>`;
+      meeting.transcript.summary_json.decisions.forEach((decision) => {
+        html += `<li>${decision}</li>`;
+      });
+      html += `</ul>`;
+    }
+
+    html += `
+  </div>`;
+  }
+
+  if (meeting.tasks && meeting.tasks.length > 0) {
+    html += `
+  <div class="section">
+    <h2>Action Items & Tasks (${meeting.tasks.length})</h2>`;
+    meeting.tasks.forEach((task) => {
+      html += `
+    <div class="task-item">
+      <strong>${task.title}</strong>
+      ${task.description ? `<p>${task.description}</p>` : ''}
+      <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+        Status: ${task.status} | Priority: ${task.priority} | 
+        Assigned to: ${task.assignedTo ? task.assignedTo.name : 'Unassigned'} | 
+        Deadline: ${task.deadline ? new Date(task.deadline).toLocaleDateString() : 'N/A'}
+      </div>
+    </div>`;
+    });
+    html += `
+  </div>`;
+  }
+
+  if (meeting.transcript?.raw_text) {
+    html += `
+  <div class="section">
+    <h2>Full Transcript</h2>
+    <pre style="white-space: pre-wrap; background: white; padding: 15px; border-radius: 4px;">${meeting.transcript.raw_text}</pre>
+  </div>`;
+  }
+
+  html += `
+</body>
+</html>`;
+
+  return html;
+};
 
 /**
  * Helper function to send emails when meeting is completed

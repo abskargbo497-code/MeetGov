@@ -1,6 +1,7 @@
 import express from 'express';
 import Transcript from '../models/Transcript.js';
 import Meeting from '../models/Meeting.js';
+import User from '../models/User.js';
 import { transcribeAudio } from '../services/whisperService.js';
 import { 
   generateStructuredSummary, 
@@ -471,13 +472,44 @@ router.get(
   asyncHandler(async (req, res) => {
     const meetingId = parseInt(req.params.meetingId);
 
-    const transcript = await Transcript.findOne({ where: { meeting_id: meetingId } });
+    // Fetch transcript with meeting info
+    const transcript = await Transcript.findOne({ 
+      where: { meeting_id: meetingId },
+      include: [
+        {
+          model: Meeting,
+          as: 'meeting',
+          attributes: ['id', 'title', 'datetime', 'location', 'description', 'status'],
+          include: [
+            {
+              model: User,
+              as: 'organizer',
+              attributes: ['id', 'name', 'email', 'department'],
+            },
+          ],
+        },
+      ],
+    });
 
     if (!transcript) {
       return errorResponse(res, 404, 'Transcript not found');
     }
 
-    return successResponse(res, 200, { transcript });
+    // Format response to include meeting info
+    const responseData = {
+      ...transcript.toJSON(),
+      meeting: transcript.meeting ? {
+        id: transcript.meeting.id,
+        title: transcript.meeting.title,
+        datetime: transcript.meeting.datetime,
+        location: transcript.meeting.location,
+        description: transcript.meeting.description,
+        status: transcript.meeting.status,
+        organizer: transcript.meeting.organizer,
+      } : null,
+    };
+
+    return successResponse(res, 200, { transcript: responseData });
   })
 );
 

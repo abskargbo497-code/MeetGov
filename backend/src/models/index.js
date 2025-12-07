@@ -29,9 +29,9 @@ User.hasMany(Attendance, { foreignKey: 'user_id', as: 'attendances' });
 // Meeting belongs to a User (organizer)
 Meeting.belongsTo(User, { foreignKey: 'organizer_id', as: 'organizer' });
 
-// Meeting can have one transcript
-Meeting.belongsTo(Transcript, { foreignKey: 'transcript_id', as: 'transcript' });
-Meeting.hasOne(Transcript, { foreignKey: 'meeting_id', as: 'meetingTranscript' });
+// Meeting has one transcript (via meeting_id foreign key on Transcript table)
+// This allows queries like: Meeting.findByPk(id, { include: [{ model: Transcript, as: 'transcript' }] })
+Meeting.hasOne(Transcript, { foreignKey: 'meeting_id', as: 'transcript' });
 
 // Meeting can have multiple attendance records
 Meeting.hasMany(Attendance, { foreignKey: 'meeting_id', as: 'attendances' });

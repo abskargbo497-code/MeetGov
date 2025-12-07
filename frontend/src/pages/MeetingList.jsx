@@ -49,10 +49,21 @@ const MeetingList = () => {
           cancelled: meetingsData.filter(m => m.status === 'cancelled').length,
         });
       } else {
-        setError(result.error || 'Failed to fetch meetings');
+        const errorMsg = result.error || 'Failed to fetch meetings';
+        setError(errorMsg);
+        console.error('Failed to fetch meetings:', result);
       }
     } catch (err) {
-      setError('Failed to fetch meetings');
+      // Better error handling for network errors
+      let errorMsg = 'Failed to fetch meetings';
+      if (err.message === 'Network Error' || err.code === 'ECONNABORTED') {
+        errorMsg = 'Cannot connect to server. Please ensure the backend is running on http://localhost:3000';
+      } else if (err.response) {
+        errorMsg = err.response.data?.message || err.response.data?.error || `Server error: ${err.response.status}`;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
       console.error('Error fetching meetings:', err);
     } finally {
       setLoading(false);
