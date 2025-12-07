@@ -24,11 +24,9 @@ const Transcript = sequelize.define('Transcript', {
   raw_text: {
     type: DataTypes.TEXT,
     allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Raw transcript text is required',
-      },
-    },
+    defaultValue: '',
+    // Note: Empty string is allowed for live transcription (text is populated incrementally)
+    // The notEmpty validation is removed to support real-time transcription workflows
   },
   summary_text: {
     type: DataTypes.TEXT,
@@ -42,6 +40,11 @@ const Transcript = sequelize.define('Transcript', {
   minutes_formatted: {
     type: DataTypes.TEXT,
     allowNull: true,
+  },
+  summary_json: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Structured summary with abstract, key_points, decisions, action_items',
   },
   audio_file_url: {
     type: DataTypes.STRING(500),

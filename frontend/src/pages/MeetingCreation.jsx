@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMeeting } from '../context/MeetingContext';
 import { useAPI } from '../hooks/useAPI';
+import { WarningIcon, PlusIcon, CloseIcon } from '../components/icons';
 import './MeetingCreation.css';
 
 const MeetingCreation = () => {
@@ -14,14 +15,56 @@ const MeetingCreation = () => {
     datetime: '',
     location: '',
   });
+  const [guestEmails, setGuestEmails] = useState([]);
+  const [guestEmailInput, setGuestEmailInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [invitingGuests, setInvitingGuests] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleAddGuestEmail = () => {
+    const email = guestEmailInput.trim().toLowerCase();
+    
+    if (!email) {
+      setError('Please enter an email address');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (guestEmails.includes(email)) {
+      setError('This email has already been added');
+      return;
+    }
+
+    setGuestEmails([...guestEmails, email]);
+    setGuestEmailInput('');
+    setError('');
+  };
+
+  const handleRemoveGuestEmail = (emailToRemove) => {
+    setGuestEmails(guestEmails.filter(email => email !== emailToRemove));
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddGuestEmail();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -32,12 +75,42 @@ const MeetingCreation = () => {
     const result = await createMeeting(formData);
 
     if (result.success) {
-      navigate(`/meetings/${result.meeting._id}`);
+      const meetingId = result.meeting?.id || result.meeting?._id || result.meetingId;
+      
+      // If there are guest emails, invite them
+      if (meetingId && guestEmails.length > 0) {
+        setInvitingGuests(true);
+        try {
+          const inviteResult = await post(`/meetings/${meetingId}/invite-guest`, {
+            emails: guestEmails,
+          });
+          
+          if (inviteResult.success) {
+            navigate(`/meetings/${meetingId}`);
+          } else {
+            // Meeting created but guest invitation failed
+            setError(inviteResult.error || 'Meeting created but failed to invite guests');
+            setInvitingGuests(false);
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          setError('Meeting created but failed to invite guests');
+          setInvitingGuests(false);
+          setLoading(false);
+          return;
+        }
+      } else if (meetingId) {
+        navigate(`/meetings/${meetingId}`);
+      } else {
+        navigate('/meetings');
+      }
     } else {
       setError(result.error || 'Failed to create meeting');
     }
 
     setLoading(false);
+    setInvitingGuests(false);
   };
 
   return (
@@ -45,7 +118,12 @@ const MeetingCreation = () => {
       <div className="meeting-creation-container">
         <h1 className="meeting-creation-title">Create New Meeting</h1>
         <form onSubmit={handleSubmit} className="meeting-creation-form">
-          {error && <div className="meeting-creation-error">{error}</div>}
+          {error && (
+            <div className="meeting-creation-error">
+              <WarningIcon className="meeting-creation-error-icon" />
+              <span>{error}</span>
+            </div>
+          )}
           <div className="meeting-creation-form-group">
             <label htmlFor="title">Meeting Title *</label>
             <input
@@ -93,6 +171,59 @@ const MeetingCreation = () => {
               />
             </div>
           </div>
+          
+          {/* Guest Invitation Section */}
+          <div className="meeting-creation-form-group">
+            <label htmlFor="guestEmails">Guest Invitations (Optional)</label>
+            <div className="guest-invitation-container">
+              <div className="guest-email-input-group">
+                <input
+                  type="email"
+                  id="guestEmails"
+                  value={guestEmailInput}
+                  onChange={(e) => setGuestEmailInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter guest email address"
+                  className="guest-email-input"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddGuestEmail}
+                  className="guest-add-button"
+                  disabled={!guestEmailInput.trim()}
+                >
+                  <PlusIcon className="guest-add-icon" />
+                  Add
+                </button>
+              </div>
+              
+              {guestEmails.length > 0 && (
+                <div className="guest-email-list">
+                  <p className="guest-email-label">Guests to invite ({guestEmails.length}):</p>
+                  <div className="guest-email-tags">
+                    {guestEmails.map((email, index) => (
+                      <div key={index} className="guest-email-tag">
+                        <span>{email}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveGuestEmail(email)}
+                          className="guest-email-remove"
+                          aria-label={`Remove ${email}`}
+                        >
+                          <CloseIcon className="guest-email-remove-icon" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <p className="guest-invitation-note" style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
+                Guests will receive an email invitation with a link to view meeting details. No account required.
+              </p>
+            </div>
+          </div>
+          
           <div className="meeting-creation-form-actions">
             <button
               type="button"

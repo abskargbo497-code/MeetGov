@@ -1,17 +1,24 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import { config } from './config.js';
 import { logger, log } from './utils/logger.js';
 import { authenticateToken } from './utils/jwt.js';
 import { connectDatabase, sequelize } from './database/connection.js';
 import './models/index.js'; // Import models to register associations
+import { seedAdmin } from './scripts/seedAdmin.js';
+import { initializeSocketIO } from './services/socketService.js';
+import { initializeStatusChecker } from './services/meetingStatusService.js';
 
 // Import routes
 import authRoutes from './api/auth.js';
 import meetingRoutes from './api/meeting.js';
 import transcriptionRoutes from './api/transcription.js';
+import liveTranscriptionRoutes from './api/liveTranscription.js';
 import taskRoutes from './api/tasks.js';
 import analyticsRoutes from './api/analytics.js';
+import notificationRoutes from './api/notifications.js';
+import reportRoutes from './api/reports.js';
 
 const app = express();
 
@@ -33,10 +40,18 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/meetings', authenticateToken, meetingRoutes);
-app.use('/api/transcription', authenticateToken, transcriptionRoutes);
-app.use('/api/tasks', authenticateToken, taskRoutes);
-app.use('/api/analytics', authenticateToken, analyticsRoutes);
+// Note: authenticateToken is applied within route files where needed
+app.use('/api/meetings', meetingRoutes);
+// Mount transcription routes under /api/meetings for new endpoints
+app.use('/api/meetings', transcriptionRoutes);
+// Legacy transcription routes
+app.use('/api/transcription', transcriptionRoutes);
+// Live transcription routes
+app.use('/api/meetings', liveTranscriptionRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -60,15 +75,34 @@ app.use((req, res) => {
   });
 });
 
-// Connect to MySQL database
+// Connect to MySQL database and seed admin
 connectDatabase()
-  .then(() => {
+  .then(async () => {
+    // Seed super admin if it doesn't exist
+    try {
+      await seedAdmin();
+    } catch (error) {
+      log.error('Failed to seed admin', error);
+      // Don't exit - continue server startup even if admin seeding fails
+    }
+
+    // Create HTTP server for Socket.IO
+    const httpServer = createServer(app);
+    
+    // Initialize Socket.IO for real-time features
+    initializeSocketIO(httpServer);
+    
+    // Initialize automatic meeting status checker (checks every minute)
+    initializeStatusChecker(60000); // 60 seconds
+    
     // Start server - listen on all interfaces (0.0.0.0) to accept connections from any IP
-    app.listen(config.port, '0.0.0.0', () => {
+    httpServer.listen(config.port, '0.0.0.0', () => {
       log.info(`Server running on http://0.0.0.0:${config.port}`);
       log.info(`Server accessible at http://localhost:${config.port}`);
       log.info(`Environment: ${config.nodeEnv}`);
       log.info(`CORS: Enabled for all origins`);
+      log.info(`WebSocket: Enabled for real-time updates`);
+      log.info(`Meeting Status Checker: Enabled (checks every 60 seconds)`);
     });
   })
   .catch((error) => {

@@ -1,0 +1,28 @@
+feat: Live transcription, minutes review, and critical bug fixes
+
+Major Features:
+- Implemented live audio recording with real-time transcription
+- Enhanced Minutes Review page with meeting selection and report generation
+- Added automatic PDF/HTML report generation for completed meetings
+- Removed all emojis and replaced with professional SVG icons
+
+Bug Fixes:
+- Fixed Transcript model validation to allow empty strings for live transcription
+- Fixed meeting status persistence when auto-starting during transcription
+- Replaced dynamic imports with top-level imports for consistency
+- Fixed LiveTranscript component to allow recording when transcription inactive
+- Improved error handling and user feedback messages
+
+Technical Improvements:
+- Enhanced audio chunk processing with validation
+- Added automatic transcription start/stop on recording
+- Improved WebSocket integration for real-time updates
+- Better error messages distinguishing microphone vs backend errors
+
+Files Modified:
+- Backend: Transcript model, liveTranscription API, meeting API, transcription API
+- Frontend: LiveTranscript component, MinutesReview page, MeetingDetail, SummaryPanel
+- Styles: Added new CSS for inactive notices, meeting headers, report buttons
+
+This commit ensures live transcription works end-to-end, minutes are properly
+displayed, and all critical bugs are resolved for production readiness.

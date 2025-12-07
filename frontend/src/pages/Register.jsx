@@ -126,8 +126,10 @@ const Register = () => {
             >
               <option value="official">Official</option>
               <option value="secretary">Secretary</option>
-              <option value="admin">Admin</option>
             </select>
+            <p className="register-role-note" style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.5rem' }}>
+              Note: Admin role cannot be registered. Admin must be seeded in the database.
+            </p>
           </div>
           <div className="register-form-group">
             <label htmlFor="department">Department (Optional)</label>

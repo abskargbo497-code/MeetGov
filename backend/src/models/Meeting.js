@@ -57,8 +57,15 @@ const Meeting = sequelize.define('Meeting', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('scheduled', 'in-progress', 'completed', 'cancelled'),
+    type: DataTypes.ENUM('scheduled', 'in-progress', 'completed', 'rescheduled', 'cancelled'),
     defaultValue: 'scheduled',
+    allowNull: false,
+    validate: {
+      isIn: {
+        args: [['scheduled', 'in-progress', 'completed', 'rescheduled', 'cancelled']],
+        msg: 'Status must be scheduled, in-progress, completed, rescheduled, or cancelled',
+      },
+    },
   },
   transcript_id: {
     type: DataTypes.INTEGER,
@@ -67,6 +74,17 @@ const Meeting = sequelize.define('Meeting', {
       model: 'transcripts',
       key: 'id',
     },
+  },
+  participants: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    comment: 'Array of participant user IDs or email addresses',
+  },
+  audio_file_path: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: 'Path to uploaded audio file',
   },
   // createdAt and updatedAt are handled automatically by Sequelize with underscored: true
 }, {

@@ -20,4 +20,22 @@ export const config = {
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   nodeEnv: process.env.NODE_ENV || 'development',
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  // Email configuration
+  email: {
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.EMAIL_PORT || '587'),
+    secure: process.env.EMAIL_SECURE === 'true',
+    auth: {
+      user: process.env.EMAIL_USER || '',
+      pass: process.env.EMAIL_PASSWORD || '',
+    },
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@meetgov.com',
+  },
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Admin seeding configuration
+  admin: {
+    email: process.env.ADMIN_EMAIL || 'admin@meetgov.com',
+    password: process.env.ADMIN_PASSWORD || 'Admin@123',
+  },
 };

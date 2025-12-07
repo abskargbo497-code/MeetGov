@@ -96,24 +96,31 @@ const TranscriptionViewer = () => {
 
       {error && <div className="transcription-viewer-error">{error}</div>}
 
-      <div className="transcription-viewer-upload">
-        <h2>Upload Audio File</h2>
-        <div className="transcription-viewer-upload-controls">
-          <input
-            type="file"
-            accept="audio/*"
-            onChange={handleFileChange}
-            className="transcription-viewer-file-input"
-          />
-          <button
-            onClick={handleUpload}
-            disabled={!file || uploading}
-            className="transcription-viewer-upload-button"
-          >
-            {uploading ? `Uploading... ${progress}%` : 'Upload & Transcribe'}
-          </button>
+      {/* Only show upload option if no transcript exists and meeting is not in-progress */}
+      {!transcript && !loading && (
+        <div className="transcription-viewer-upload">
+          <h2>Audio Transcription</h2>
+          <p style={{ marginBottom: '1rem', color: '#666' }}>
+            For live meetings, use the "Start Recording" button in the meeting details page.
+            You can upload audio files here for completed meetings.
+          </p>
+          <div className="transcription-viewer-upload-controls">
+            <input
+              type="file"
+              accept="audio/*"
+              onChange={handleFileChange}
+              className="transcription-viewer-file-input"
+            />
+            <button
+              onClick={handleUpload}
+              disabled={!file || uploading}
+              className="transcription-viewer-upload-button"
+            >
+              {uploading ? `Uploading... ${progress}%` : 'Upload & Transcribe'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {transcript && (
         <div className="transcription-viewer-content">

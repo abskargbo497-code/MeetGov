@@ -113,4 +113,15 @@
   }
 }
 
+.summary-panel-transcript {
+  white-space: pre-wrap;
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 4px;
+  max-height: 500px;
+  overflow-y: auto;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
 

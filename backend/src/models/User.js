@@ -34,18 +34,23 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      len: {
-        args: [6, Infinity],
-        msg: 'Password must be at least 6 characters',
-      },
       notEmpty: {
         msg: 'Password is required',
       },
     },
+    // Note: Password length validation is done in the API route, not here
+    // because password_hash will be a bcrypt hash (60 chars) after hashing
   },
   role: {
-    type: DataTypes.ENUM('admin', 'official', 'secretary'),
+    type: DataTypes.ENUM('super_admin', 'secretary', 'official'),
     defaultValue: 'official',
+    allowNull: false,
+    validate: {
+      isIn: {
+        args: [['super_admin', 'secretary', 'official']],
+        msg: 'Role must be super_admin, secretary, or official',
+      },
+    },
   },
   department: {
     type: DataTypes.STRING,
