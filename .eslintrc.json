@@ -1,0 +1,34 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
+  },
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "NewExpression[callee.name='PrismaClient']",
+        "message": "❌ FORBIDDEN: Direct PrismaClient instantiation. Import from '@/lib/prisma' instead to prevent connection pool exhaustion."
+      },
+      {
+        "selector": "NewExpression[callee.name='Redis']",
+        "message": "❌ FORBIDDEN: Direct Redis instantiation. Import from '@/lib/redis' instead to prevent connection exhaustion."
+      },
+      {
+        "selector": "NewExpression[callee.name='IORedis']",
+        "message": "❌ FORBIDDEN: Direct IORedis instantiation. Import from '@/lib/redis' instead to prevent connection exhaustion."
+      }
+    ]
+  },
+  "ignorePatterns": ["node_modules/", "dist/", "build/", "*.js"]
+}

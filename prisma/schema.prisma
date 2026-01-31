@@ -1,0 +1,667 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// BetterAuth Models
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  accounts      Account[]
+  enterpriseMemberships EnterpriseMembership[]
+  enterpriseInvitesCreated EnterpriseInvite[] @relation("EnterpriseInvitesCreated")
+  enterpriseInvitesAccepted EnterpriseInvite[] @relation("EnterpriseInvitesAccepted")
+
+  @@index([email])
+}
+
+// Enterprise Models
+model Enterprise {
+  id          String   @id @default(uuid())
+  name        String
+  domain      String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships EnterpriseMembership[]
+  invites     EnterpriseInvite[]
+  meetings    Meeting[]
+  tasks       Task[]
+
+  @@index([domain])
+}
+
+enum EnterpriseRole {
+  ADMIN
+  ORGANIZER
+  ASSIGNEE
+}
+
+enum EnterpriseInviteStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+model EnterpriseInvite {
+  id              String                @id @default(uuid())
+  enterpriseId    String
+  enterprise      Enterprise            @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  email           String
+  role            EnterpriseRole
+  inviteToken     String                @unique
+  expiresAt       DateTime
+  status          EnterpriseInviteStatus @default(PENDING)
+  createdAt       DateTime              @default(now())
+  createdByUserId String?
+  createdByUser   User?                 @relation("EnterpriseInvitesCreated", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  acceptedAt      DateTime?
+  acceptedByUserId String?
+  acceptedByUser  User?                 @relation("EnterpriseInvitesAccepted", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  revokedAt       DateTime?
+  revokedByUserId String?
+
+  @@index([enterpriseId])
+  @@index([email])
+  @@index([inviteToken])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model EnterpriseMembership {
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enterpriseId String
+  enterprise   Enterprise     @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  role         EnterpriseRole
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([userId, enterpriseId])
+  @@index([userId])
+  @@index([enterpriseId])
+  @@index([enterpriseId, role])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  expiresAt             DateTime?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([identifier, value])
+}
+
+// Participant - Meeting participants who can scan QR and submit tasks
+model Participant {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  sessions      ParticipantSession[]
+  invites       ParticipantInvite[]
+  attendances   Attendance[]
+  assignedTasks Task[]     @relation("ParticipantTasks")
+
+  @@index([email])
+}
+
+// ParticipantSession - Token-based authentication for participants
+model ParticipantSession {
+  id            String      @id @default(uuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  meetingId     String?
+  meeting       Meeting?      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  inviteId      String?
+  invite        ParticipantInvite? @relation(fields: [inviteId], references: [id], onDelete: SetNull)
+  token         String      @unique
+  expiresAt     DateTime
+  createdAt     DateTime    @default(now())
+  lastActiveAt  DateTime    @default(now())
+
+  @@index([participantId])
+  @@index([meetingId])
+  @@index([inviteId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+enum ParticipantInviteStatus {
+  PENDING
+  USED
+  REVOKED
+}
+
+model ParticipantInvite {
+  id            String      @id @default(uuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  meetingId     String
+  meeting       Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  sessions      ParticipantSession[]
+  inviteToken   String      @unique
+  expiresAt     DateTime
+  status        ParticipantInviteStatus @default(PENDING)
+  createdAt     DateTime    @default(now())
+
+  @@index([participantId])
+  @@index([meetingId])
+  @@index([inviteToken])
+  @@index([expiresAt])
+  @@index([status])
+}
+
+
+// Guest Session - Temporary user sessions
+model GuestSession {
+  id          String    @id @default(uuid())
+  token       String    @unique
+  email       String?
+  name        String?
+  metadata    Json?     // Store additional guest info
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime  // Session TTL
+  lastActiveAt DateTime @default(now())
+  usageState  GuestUsageState @default(ACTIVE)
+  workflowCount Int @default(0)
+  firstWorkflowCompletedAt DateTime?
+  exhaustedAt DateTime?
+  conversionState GuestConversionState @default(NONE)
+  conversionDeadlineAt DateTime?
+  conversionDecidedAt DateTime?
+  
+  // Browser-based usage tracking
+  hasUsedPlatform Boolean @default(false)
+  browserFingerprint String?
+  modalDismissCount Int @default(0)
+  firstDismissedAt DateTime?
+  
+  // Relations
+  meetings    Meeting[]
+  attendances Attendance[]
+  tasks       Task[]
+
+  @@index([token])
+  @@index([expiresAt])
+  @@index([browserFingerprint])
+}
+
+// Meeting Status Enum
+enum MeetingStatus {
+  WAITING    // Scheduled but not started
+  SCHEDULED  // Legacy - treat as WAITING
+  LIVE       // Currently in progress
+  ACTIVE     // Legacy - treat as LIVE
+  ENDED      // Recording ended, may be processing
+  COMPLETED  // Fully processed
+  CANCELLED
+  FAILED
+}
+
+// Processing Status Enum
+enum ProcessingStatus {
+  IDLE
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// Owner Type Enum - Unified ownership model
+enum OwnerType {
+  PERSONAL
+  GUEST
+  ENTERPRISE
+}
+
+enum GuestUsageState {
+  ACTIVE
+  EXHAUSTED
+}
+
+enum GuestConversionState {
+  NONE
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+// Meeting - Core meeting entity
+model Meeting {
+  id              String        @id @default(uuid())
+  title           String
+  description     String?       @db.Text
+  location        String?       // Online, In-person, or address
+  status          MeetingStatus @default(SCHEDULED)
+  processingStatus ProcessingStatus @default(IDLE)
+  processingError String?       @db.Text // Error message if processing failed
+  scheduledStart  DateTime?
+  actualStart     DateTime?
+  actualEnd       DateTime?
+  scheduledEnd    DateTime?     // Auto-end trigger time
+  recordingStatus String        @default("NOT_STARTED") // NOT_STARTED, RECORDING, PAUSED, STOPPED
+  recordingPausedAt DateTime?
+  recordingResumedAt DateTime?
+  
+  // Workflow completion tracking for guests
+  workflowCompletedAt DateTime? // Set when transcript + at least one AI artifact is complete
+  isReadOnly      Boolean       @default(false) // Prevents further modifications after workflow completion
+  
+  // Unified ownership model
+  ownerType       OwnerType     @default(GUEST)
+  ownerId         String        // userId for PERSONAL, guestSessionId for GUEST
+  invitedParticipants Json?     // List of invited emails
+  
+  // Enterprise scoping (optional - only for enterprise users)
+  enterpriseId    String?
+  enterprise      Enterprise?   @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  
+  // Legacy relation for guest sessions (optional for backward compatibility)
+  guestSessionId  String?
+  guestSession    GuestSession? @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  expiresAt       DateTime      // Data retention TTL
+
+  guestAccessCode String?       @unique @map("trackingCode")
+
+  // Relations
+  attendances     Attendance[]
+  participantSessions ParticipantSession[]
+  participantInvites  ParticipantInvite[]
+  recordings      Recording[]
+  transcripts     Transcript[]
+  transcriptSegments TranscriptSegment[]
+  summaries       MeetingSummary[]
+  minutes         MeetingMinutes[]
+  tasks           Task[]
+  attendanceToken AttendanceToken?
+  aiJobs          AiJob[]
+  artifacts       MeetingArtifact[]
+
+  @@index([ownerId])
+  @@index([ownerType])
+  @@index([guestSessionId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([enterpriseId])
+}
+
+// Attendance - Track participants
+model Attendance {
+  id             String       @id @default(uuid())
+  meetingId      String
+  meeting        Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  ownerType      OwnerType    @default(GUEST)
+  ownerId        String?
+  guestSessionId String?
+  guestSession   GuestSession? @relation(fields: [guestSessionId], references: [id], onDelete: SetNull)
+  
+  // Participant relation (for authenticated participants)
+  participantId  String?
+  participant    Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  
+  participantName String
+  participantEmail String?
+  role           String?      @default("ATTENDEE")
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+  durationMinutes Int?
+  isLate         Boolean      @default(false)
+  lateByMinutes  Int?
+  checkedInAt    DateTime?
+  checkedInVia   String?      @default("MANUAL") // MANUAL, QR_SCAN
+
+  @@index([meetingId])
+  @@index([guestSessionId])
+  @@index([ownerType])
+  @@index([ownerId])
+  @@index([participantId])
+}
+
+// AttendanceToken - QR-based attendance verification
+model AttendanceToken {
+  id          String   @id @default(uuid())
+  meetingId   String   @unique
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  usedCount   Int      @default(0)
+
+  @@index([token])
+  @@index([meetingId])
+}
+
+// Recording - Audio/Video files
+model Recording {
+  id          String   @id @default(uuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  status      String   @default("NOT_STARTED") // NOT_STARTED, RECORDING, PAUSED, STOPPED, COMPLETED
+  startedAt   DateTime?
+  endedAt     DateTime?
+  fileUrl     String   // GCS URL
+  fileSize    BigInt   // Bytes
+  mimeType    String
+  duration    Int?     // Seconds
+  processingStatus String @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED
+  uploadedAt  DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([meetingId])
+  @@index([expiresAt])
+  @@index([processingStatus])
+}
+
+// Transcript - Raw meeting transcripts
+model Transcript {
+  id          String   @id @default(uuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  content     String   @db.Text
+  language    String   @default("en")
+  source      String   @default("AI") // AI, MANUAL, UPLOAD
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([meetingId])
+}
+
+// TranscriptSegment - Diarized transcript segments with speaker labels
+model TranscriptSegment {
+  id           String   @id @default(uuid())
+  meetingId    String
+  meeting      Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  speakerLabel String   // e.g., "SPEAKER_1", "SPEAKER_2"
+  text         String   @db.Text
+  startTime    Float    // Start time in seconds
+  endTime      Float    // End time in seconds
+  confidence   Float?   // Transcription confidence score
+  createdAt    DateTime @default(now())
+
+  @@index([meetingId])
+  @@index([meetingId, startTime])
+}
+
+// MeetingSummary - AI-generated summaries
+model MeetingSummary {
+  id          String   @id @default(uuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  summary     String   @db.Text
+  keyPoints   Json?    // Array of key discussion points
+  decisions   Json?    // Array of decisions made
+  aiModel     String   // e.g., "gpt-4", "gemini-pro"
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  @@index([meetingId])
+}
+
+// MeetingMinutes - Structured minutes
+model MeetingMinutes {
+  id          String   @id @default(uuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  content     String   @db.Text
+  format      String   @default("MARKDOWN") // MARKDOWN, HTML, PDF
+  createdBy   String?  // Guest session or AI
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime
+
+  @@index([meetingId])
+}
+
+// Task Status Enum
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  COMPLETED
+  CANCELLED
+}
+
+// Task - Action items from meetings
+model Task {
+  id             String       @id @default(uuid())
+  meetingId      String
+  meeting        Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  // Unified ownership model
+  ownerType      OwnerType    @default(GUEST)
+  ownerId        String       // userId for PERSONAL, guestSessionId for GUEST
+  
+  // Personal user task management
+  createdByUserId   String?   // User who created the task
+  assignedToUserId  String?   // User the task is assigned to
+  
+  // Enterprise scoping (optional - only for enterprise users)
+  enterpriseId   String?
+  enterprise     Enterprise?  @relation(fields: [enterpriseId], references: [id], onDelete: Cascade)
+  
+  // Legacy relation for guest sessions (optional for backward compatibility)
+  guestSessionId String?
+  guestSession   GuestSession? @relation(fields: [guestSessionId], references: [id], onDelete: Cascade)
+  
+  // Participant assignment (for authenticated participants)
+  participantId  String?
+  participant    Participant? @relation("ParticipantTasks", fields: [participantId], references: [id], onDelete: SetNull)
+  
+  title          String
+  description    String?      @db.Text
+  assignee       String?      // Participant name
+  assigneeEmail   String?
+  status         TaskStatus   @default(PENDING)
+  priority       String?      @default("MEDIUM") // LOW, MEDIUM, HIGH
+  dueDate        DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  completedAt    DateTime?
+  expiresAt      DateTime
+
+  submissionTokens TaskSubmissionToken[]
+  submissions      TaskSubmission[]
+
+  @@index([meetingId])
+  @@index([ownerId])
+  @@index([ownerType])
+  @@index([guestSessionId])
+  @@index([status])
+  @@index([participantId])
+  @@index([enterpriseId])
+  @@index([createdByUserId])
+  @@index([assignedToUserId])
+}
+
+model TaskSubmissionToken {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+
+  @@index([taskId])
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model TaskSubmission {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  notes     String?  @db.Text
+  submittedByType String?
+  submittedByUserId String?
+  submittedByParticipantId String?
+  submittedByEmail String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  files     TaskSubmissionFile[]
+
+  @@index([taskId])
+}
+
+model TaskSubmissionFile {
+  id               String   @id @default(uuid())
+  submissionId     String
+  submission       TaskSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  objectName       String
+  fileUrl          String
+  fileSize         BigInt
+  mimeType         String
+  originalFileName String?
+  uploadedAt       DateTime @default(now())
+  expiresAt        DateTime
+
+  @@index([submissionId])
+}
+
+// AI Job Type Enum
+enum AiJobType {
+  SUMMARY
+  MINUTES
+  ACTION_ITEMS
+}
+
+// AI Job Status Enum
+enum AiJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+// AI Job - Track AI generation job lifecycle
+model AiJob {
+  id                    String    @id @default(uuid())
+  meetingId             String
+  meeting               Meeting   @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  type                  AiJobType
+  status                AiJobStatus @default(PENDING)
+  
+  bullmqJobId           String?   // BullMQ job ID for reference
+  errorMessage          String?   @db.Text
+  
+  transcriptSnapshotId  String?
+  transcriptSnapshot    TranscriptSnapshot? @relation(fields: [transcriptSnapshotId], references: [id])
+  
+  aiModel               String?   // e.g., "gpt-4o-mini"
+  
+  createdAt             DateTime  @default(now())
+  startedAt             DateTime?
+  completedAt           DateTime?
+  
+  @@index([meetingId])
+  @@index([status])
+  @@index([type])
+  @@index([meetingId, type, status])
+}
+
+// Transcript Snapshot - Immutable copy of transcript at job creation time
+model TranscriptSnapshot {
+  id          String   @id @default(uuid())
+  meetingId   String
+  content     String   @db.Text
+  language    String   @default("en")
+  createdAt   DateTime @default(now())
+  
+  aiJobs      AiJob[]
+  
+  @@index([meetingId])
+}
+
+// Meeting Artifact Type Enum
+enum MeetingArtifactType {
+  SUMMARY
+  MINUTES
+  ACTION_ITEMS
+}
+
+// Meeting Artifact Status Enum
+enum MeetingArtifactStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// Meeting Artifact - Persistent storage for AI-generated content
+model MeetingArtifact {
+  id          String                @id @default(uuid())
+  meetingId   String
+  meeting     Meeting               @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  type        MeetingArtifactType
+  content     String?               @db.Text
+  status      MeetingArtifactStatus @default(PENDING)
+  aiJobId     String?               // Reference to the AiJob that created this
+  errorMessage String?              @db.Text
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@unique([meetingId, type])
+  @@index([meetingId])
+  @@index([status])
+}
