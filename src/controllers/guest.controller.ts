@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
-import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
+import crypto from 'crypto';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'guest-session-secret-key';
 const SESSION_EXPIRY_HOURS = 24; // Guest session valid for 24 hours
 

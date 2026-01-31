@@ -5,13 +5,12 @@
  * Scoped by userId and meetingId for personal account users
  */
 
-import { PrismaClient, TaskStatus, OwnerType, Task, TaskSubmission } from '@prisma/client';
+import { TaskStatus, OwnerType, Task, TaskSubmission } from '@prisma/client';
 import Logger from '../logger';
 import { emitTaskEvent, emitEnterpriseTaskAssigned } from '../websocket/ws-server';
+import { prisma } from '../lib/prisma';
 import r2Storage from './r2-storage.service';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 // Data retention period (30 days for personal users)
 const DATA_RETENTION_DAYS = 30;

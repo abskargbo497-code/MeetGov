@@ -10,10 +10,9 @@ import Logger from '../logger';
 import * as participantService from '../services/participant.service';
 import { emitAttendanceEvent } from '../websocket/ws-server';
 import r2Storage from '../services/r2-storage.service';
-import { PrismaClient, TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 /**
  * Get meeting info for join/resolution

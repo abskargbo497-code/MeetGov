@@ -4,12 +4,11 @@
  * Handles meeting CRUD operations for personal (authenticated) users
  */
 
-import { PrismaClient, MeetingStatus, OwnerType, ProcessingStatus } from '@prisma/client';
+import { MeetingStatus, OwnerType, ProcessingStatus } from '@prisma/client';
 import crypto from 'crypto';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { sendMeetingInvites, parseParticipantsFromJson, MeetingInviteData } from './meeting-email.service';
-
-const prisma = new PrismaClient();
 
 // Data retention period (30 days for personal users, longer than guest)
 const DATA_RETENTION_DAYS = 30;

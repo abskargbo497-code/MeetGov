@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient, MeetingStatus, OwnerType } from '@prisma/client';
+import { MeetingStatus, OwnerType } from '@prisma/client';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { emitAttendanceEvent } from '../websocket/ws-server';
-
-const prisma = new PrismaClient();
 
 /**
  * Check-in to a meeting (public, no auth required)

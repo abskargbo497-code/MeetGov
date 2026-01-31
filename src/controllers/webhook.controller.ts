@@ -5,8 +5,8 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { ASSEMBLYAI_WEBHOOK_SECRET } from '../config/assemblyai';
 import {
   processTranscriptionResult,
@@ -14,8 +14,6 @@ import {
   getTranscriptionResult,
 } from '../services/assemblyai-transcription.service';
 import { emitMeetingEvent, emitProcessingCompleted, emitProcessingFailed } from '../websocket/ws-server';
-
-const prisma = new PrismaClient();
 
 /**
  * AssemblyAI Webhook Handler

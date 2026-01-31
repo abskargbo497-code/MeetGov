@@ -5,10 +5,9 @@
  * All queries are scoped by enterpriseId for multi-tenant safety
  */
 
-import { PrismaClient, TaskStatus, MeetingStatus } from '@prisma/client';
+import { TaskStatus, MeetingStatus } from '@prisma/client';
 import Logger from '../logger';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // Types
 export interface OrganizationStats {

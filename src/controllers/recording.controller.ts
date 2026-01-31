@@ -7,7 +7,12 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient, MeetingStatus, ProcessingStatus } from '@prisma/client';
+import { MeetingStatus, ProcessingStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import Logger from '../logger';
+import r2Storage from '../services/r2-storage.service';
+import { getRequestContext, canControlMeeting, MeetingOwnership } from '../lib/meeting-auth';
+import { enqueueTranscriptionJob } from '../queues/processing.queue';
 
 // Multer file type for uploads
 interface MulterFile {
@@ -19,12 +24,6 @@ interface MulterFile {
   buffer: Buffer;
 }
 import * as crypto from 'crypto';
-import Logger from '../logger';
-import r2Storage from '../services/r2-storage.service';
-import { getRequestContext, canControlMeeting, MeetingOwnership } from '../lib/meeting-auth';
-import { enqueueTranscriptionJob } from '../queues/processing.queue';
-
-const prisma = new PrismaClient();
 
 // Data retention period (7 days for guest users)
 const DATA_RETENTION_DAYS = 7;

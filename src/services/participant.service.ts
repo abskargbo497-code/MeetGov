@@ -5,10 +5,9 @@
  * Participants are authenticated users who join meetings but don't own them
  */
 
-import { PrismaClient, MeetingStatus, OwnerType, TaskStatus } from '@prisma/client';
+import { MeetingStatus, OwnerType, TaskStatus } from '@prisma/client';
 import Logger from '../logger';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export type MeetingJoinInfo = {
   meetingId: string;

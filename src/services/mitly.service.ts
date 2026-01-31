@@ -10,10 +10,9 @@
  */
 
 import { OpenAI } from 'openai';
-import { PrismaClient, EnterpriseRole } from '@prisma/client';
+import { EnterpriseRole } from '@prisma/client';
 import Logger from '../logger';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 let openai: OpenAI;
 

@@ -5,14 +5,13 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient, EnterpriseRole } from '@prisma/client';
+import { EnterpriseRole } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { auth } from '../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { sendEnterpriseInviteEmail } from '../services/email.service';
-
-const prisma = new PrismaClient();
 
 // Validation schemas
 const memberSchema = z.object({

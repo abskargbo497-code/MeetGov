@@ -4,10 +4,8 @@
  * Handles transcript retrieval and formatting
  */
 
-import { PrismaClient } from '@prisma/client';
 import Logger from '../logger';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export type TranscriptSegmentResponse = {
   id: string;

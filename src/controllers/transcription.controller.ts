@@ -11,12 +11,11 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient, MeetingStatus, ProcessingStatus, EnterpriseRole, OwnerType } from '@prisma/client';
+import { OwnerType, EnterpriseRole } from '@prisma/client';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { enqueueTranscriptionJob } from '../queues/processing.queue';
 import { getRequestContext, canControlMeeting, canViewMeeting, MeetingOwnership, RequestContext } from '../lib/meeting-auth';
-
-const prisma = new PrismaClient();
 
 /**
  * Helper to build MeetingOwnership from meeting record

@@ -1,6 +1,9 @@
 // INFRASTRUCTURE-ONLY MODULE
 // Business logic and user flows will be layered later
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import http from 'http';
 import app from './app';
 import Logger from './logger/index';

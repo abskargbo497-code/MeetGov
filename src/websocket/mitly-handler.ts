@@ -9,14 +9,13 @@
  */
 
 import { WebSocket } from 'ws';
+import { EnterpriseRole } from '@prisma/client';
+import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { auth } from '../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
-import { PrismaClient, EnterpriseRole } from '@prisma/client';
-import Logger from '../logger';
 import { streamMitlyResponse, MitlyUserContext } from '../services/mitly.service';
 import { IncomingMessage } from 'http';
-
-const prisma = new PrismaClient();
 
 /**
  * Authenticated MITLY connection

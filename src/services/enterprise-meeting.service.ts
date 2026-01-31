@@ -5,12 +5,11 @@
  * Follows the same pattern as personal-meeting.service.ts
  */
 
-import { PrismaClient, MeetingStatus, OwnerType, ProcessingStatus, EnterpriseRole } from '@prisma/client';
+import { MeetingStatus, OwnerType, ProcessingStatus, EnterpriseRole } from '@prisma/client';
 import crypto from 'crypto';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { sendMeetingInvites, parseParticipantsFromJson, MeetingInviteData } from './meeting-email.service';
-
-const prisma = new PrismaClient();
 
 // Data retention period (90 days for enterprise users)
 const DATA_RETENTION_DAYS = 90;

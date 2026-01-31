@@ -2,10 +2,9 @@ import { Server } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import Logger from '../logger';
 import { generateMeetingDraft as aiGenerateMeetingDraft } from '../services/ai-assistant.service';
-import { PrismaClient, OwnerType, EnterpriseRole } from '@prisma/client';
+import { OwnerType, EnterpriseRole } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { canControlMeeting, createWebSocketContext, RequestContext, MeetingOwnership } from '../lib/meeting-auth';
-
-const prisma = new PrismaClient();
 
 // Store active connections
 type Connection = {

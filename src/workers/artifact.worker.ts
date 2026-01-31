@@ -10,10 +10,10 @@
  */
 
 import { Worker, Job } from 'bullmq';
-import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import Logger from '../logger';
-import {
+import { prisma } from '../lib/prisma';
+import { 
   ARTIFACT_QUEUE_NAME,
   ArtifactJobData,
   ArtifactJobResult,
@@ -29,7 +29,6 @@ import {
   emitAllArtifactsCompleted 
 } from '../websocket/ws-server';
 
-const prisma = new PrismaClient();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // AI Prompts for each artifact type

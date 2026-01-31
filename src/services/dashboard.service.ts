@@ -5,10 +5,9 @@
  * Returns upcoming meetings, assigned tasks, and recent activity
  */
 
-import { PrismaClient, TaskStatus, MeetingStatus, EnterpriseRole } from '@prisma/client';
+import { TaskStatus, MeetingStatus, EnterpriseRole } from '@prisma/client';
 import Logger from '../logger';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 // Types
 export interface UpcomingMeeting {

@@ -6,12 +6,11 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient, EnterpriseRole } from '@prisma/client';
+import { EnterpriseRole } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { auth } from '../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
 import Logger from '../logger';
-
-const prisma = new PrismaClient();
 
 // Extend Express Request type to include enterprise context
 declare global {

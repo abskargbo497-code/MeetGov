@@ -5,7 +5,6 @@ import express from 'express';
 import type { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import requestLogger from './middlewares/request-logger';
 import { errorHandler } from './middlewares/error';
 import Logger from './logger/index';
@@ -24,8 +23,6 @@ import aiRoutes from './routes/ai.routes';
 import participantRoutes from './routes/participant.routes';
 import webhookRoutes from './routes/webhook.routes';
 import taskRoutes, { meetingTaskRouter } from './routes/task.routes';
-
-dotenv.config();
 
 const app: Application = express();
 
@@ -50,7 +47,7 @@ app.use(cors({
         return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-workflow-id'],
     credentials: true,
 }));
 

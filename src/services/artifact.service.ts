@@ -4,12 +4,11 @@
  * Handles AI artifact generation, storage, and retrieval
  */
 
-import { PrismaClient, MeetingArtifactType, MeetingArtifactStatus, OwnerType } from '@prisma/client';
+import { MeetingArtifactType, MeetingArtifactStatus, OwnerType } from '@prisma/client';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { getFullTranscriptText } from './transcript.service';
 import { emitMeetingEvent } from '../websocket/ws-server';
-
-const prisma = new PrismaClient();
 
 // DEV MODE: Bypass meeting limits but still enforce per-meeting read-only
 const DEV_MODE_BYPASS_MEETING_LIMIT = process.env.DEV_MODE_BYPASS_MEETING_LIMIT === 'true' || true;

@@ -5,12 +5,10 @@
  * with true multi-speaker diarization support
  */
 
-import { PrismaClient } from '@prisma/client';
 import { assemblyAI, ASSEMBLYAI_WEBHOOK_URL, ASSEMBLYAI_WEBHOOK_SECRET } from '../config/assemblyai';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import r2Storage from './r2-storage.service';
-
-const prisma = new PrismaClient();
 
 // Data retention period
 const DATA_RETENTION_DAYS = 7;

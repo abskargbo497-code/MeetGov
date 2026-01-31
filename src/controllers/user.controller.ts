@@ -5,11 +5,10 @@
  */
 
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import { auth } from '../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
-
-const prisma = new PrismaClient();
 
 export const getCurrentUser = async (req: Request, res: Response) => {
   try {

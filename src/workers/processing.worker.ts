@@ -10,9 +10,9 @@
  */
 
 import { Worker, Job } from 'bullmq';
-import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
 import r2Storage from '../services/r2-storage.service';
 import { emitProcessingCompleted, emitProcessingFailed, emitTranscriptReady } from '../websocket/ws-server';
 import {
@@ -30,7 +30,6 @@ import {
 } from '../services/assemblyai-transcription.service';
 import { triggerAllArtifactsGeneration } from '../services/artifact.service';
 
-const prisma = new PrismaClient();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Data retention period

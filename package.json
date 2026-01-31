@@ -14,7 +14,7 @@
   "author": "",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --env-file=.env src/server.ts",
     "validate:prisma": "node scripts/validate-prisma.js",
     "validate:redis": "node scripts/validate-redis.js",
     "validate": "npm run validate:prisma && npm run validate:redis",

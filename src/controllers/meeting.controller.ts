@@ -1,13 +1,12 @@
 import { Request, Response } from 'express';
-import { PrismaClient, MeetingStatus, OwnerType } from '@prisma/client';
-import crypto from 'crypto';
+import { MeetingStatus, OwnerType } from '@prisma/client';
 import Logger from '../logger';
-import * as meetingLifecycle from '../services/meeting-lifecycle.service';
-import { sendMeetingInvites, parseParticipantsFromJson, MeetingInviteData } from '../services/meeting-email.service';
+import { prisma } from '../lib/prisma';
 import { auth } from '../lib/auth';
 import { fromNodeHeaders } from 'better-auth/node';
-
-const prisma = new PrismaClient();
+import { sendMeetingInvites, parseParticipantsFromJson, MeetingInviteData } from '../services/meeting-email.service';
+import crypto from 'crypto';
+import * as meetingLifecycle from '../services/meeting-lifecycle.service';
 
 // =============================================================================
 // DEV MODE: BYPASS GUEST MEETING LIMITS

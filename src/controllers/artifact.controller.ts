@@ -10,15 +10,14 @@
  */
 
 import { Request, Response } from 'express';
+import { MeetingArtifactType, MeetingArtifactStatus, OwnerType, EnterpriseRole } from '@prisma/client';
 import Logger from '../logger';
+import { prisma } from '../lib/prisma';
+import { auth } from '../lib/auth';
+import { fromNodeHeaders } from 'better-auth/node';
 import * as transcriptService from '../services/transcript.service';
 import * as artifactService from '../services/artifact.service';
 import { enqueueArtifactJob } from '../queues/artifact.queue';
-import { MeetingArtifactType, PrismaClient, EnterpriseRole, OwnerType } from '@prisma/client';
-import { auth } from '../lib/auth';
-import { fromNodeHeaders } from 'better-auth/node';
-
-const prisma = new PrismaClient();
 
 // User access levels
 type AccessLevel = 'OWNER' | 'ORGANIZER' | 'ADMIN' | 'NONE';
