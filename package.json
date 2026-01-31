@@ -12,14 +12,16 @@
   ],
   "license": "MIT",
   "author": "",
-  "main": "src/server.ts",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "validate:prisma": "node scripts/validate-prisma.js",
     "validate:redis": "node scripts/validate-redis.js",
     "validate": "npm run validate:prisma && npm run validate:redis",
+    "postinstall": "prisma generate",
     "prebuild": "npm run validate",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "start": "node dist/server.js",
     "prestart": "npm run validate"
   },
   "devDependencies": {
@@ -34,12 +36,12 @@
     "@types/qrcode": "^1.5.6",
     "@types/ws": "^8.18.1",
     "nodemon": "^3.1.11",
-    "prisma": "^6.19.2",
     "ts-node-dev": "^2.0.0",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "prisma": "^6.19.2",
+    "tsx": "^4.21.0",
     "@aws-sdk/client-s3": "^3.978.0",
     "@aws-sdk/s3-request-presigner": "^3.978.0",
     "@google-cloud/storage": "^7.18.0",
