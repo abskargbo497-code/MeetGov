@@ -9,10 +9,8 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
 import { getWorkflowId } from '@/lib/api/guest-session';
 
-// WebSocket is disabled — backend is now embedded in Next.js.
-// Real-time notifications can be added later via SSE or polling.
-// const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
-// const WS_PATH = '/api/v1/ws';
+const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001';
+const WS_PATH = '/api/v1/ws';
 
 export type NotificationType = 'task' | 'meeting' | 'info';
 

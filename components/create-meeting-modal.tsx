@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -101,6 +101,7 @@ export function CreateMeetingModal({
   const [createdMeeting, setCreatedMeeting] = useState<MeetingDetail | null>(null);
   const [inviteResults, setInviteResults] = useState<InviteResult[]>([]);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [, setTick] = useState(0);
 
   const [formData, setFormData] = useState<MeetingFormData>({
     title: "",
@@ -113,6 +114,13 @@ export function CreateMeetingModal({
 
   const [newParticipant, setNewParticipant] = useState({ name: "", email: "" });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Re-compute warnings every minute so "starts in X" stays current
+  useEffect(() => {
+    if (!open || formData.type !== "scheduled") return;
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, [open, formData.type]);
 
   const resetForm = useCallback(() => {
     setStep(1);
@@ -359,11 +367,22 @@ Today's date is ${new Date().toISOString()}. Use INSTANT if no specific date/tim
     }
     if (formData.type === "scheduled" && formData.date) {
       const scheduled = new Date(formData.date);
-      const [hours, minutes] = (formData.time || "00:00").split(":").map(Number);
-      scheduled.setHours(hours, minutes, 0, 0);
-      const hoursUntil = (scheduled.getTime() - Date.now()) / (1000 * 60 * 60);
-      if (hoursUntil < 1) {
-        warnings.push("Meeting is scheduled to start in less than 1 hour");
+      const [h, m] = (formData.time || "00:00").split(":").map(Number);
+      scheduled.setHours(h, m, 0, 0);
+      const diffMs = scheduled.getTime() - Date.now();
+      if (diffMs < 0) {
+        warnings.push("This scheduled time has already passed");
+      } else {
+        const totalMins = Math.floor(diffMs / 60000);
+        const hrs = Math.floor(totalMins / 60);
+        const mins = totalMins % 60;
+        const label =
+          hrs === 0
+            ? `${mins} minute${mins !== 1 ? "s" : ""}`
+            : mins === 0
+            ? `${hrs} hour${hrs !== 1 ? "s" : ""}`
+            : `${hrs}h ${mins}m`;
+        warnings.push(`Meeting starts in ${label}`);
       }
     }
     const invalidEmails = formData.participants.filter((p) => !validateEmail(p.email));

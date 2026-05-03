@@ -224,7 +224,7 @@ export default function MeetingRoomPage() {
       await loadMeeting();
     };
     init();
-  }, [loadMeeting, router, session, isSessionLoading]);
+  }, [loadMeeting, router, session?.user?.id, isSessionLoading]);
 
   // Fetch initial attendance data
   useEffect(() => {

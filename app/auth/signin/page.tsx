@@ -61,11 +61,10 @@ function SignInContent() {
     setLoadingRole(role);
     storeSignInRole(role);
 
-    // afterSignInUrl carries the role through the OAuth redirect
     openSignIn({
-      afterSignInUrl: `${window.location.origin}/auth/callback?type=${role}`,
-      afterSignUpUrl: `${window.location.origin}/auth/callback?type=${role}&new=true`,
-    });
+      forceRedirectUrl: `${window.location.origin}/auth/callback?type=${role}`,
+      signUpForceRedirectUrl: `${window.location.origin}/auth/callback?type=${role}&new=true`,
+    } as any);
 
     setLoadingRole(null);
   };

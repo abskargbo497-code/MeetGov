@@ -29,7 +29,7 @@ function CheckInContent() {
     const loadMeetingInfo = async () => {
       try {
         // Use the new public attendance endpoint for minimal meeting info
-        const response = await api.get(`/attendance/meeting/${meetingId}`);
+        const response = await api.get(`/api/attendance/meeting/${meetingId}`);
         if (response.data?.title) {
           setMeetingTitle(response.data.title);
         }
@@ -71,7 +71,7 @@ function CheckInContent() {
 
     try {
       // Use the new attendance check-in endpoint
-      await api.post(`/attendance/check-in`, {
+      await api.post(`/api/attendance/check-in`, {
         meetingId,
         name: name.trim(),
         email: email.trim() || undefined,

@@ -48,36 +48,30 @@ export async function POST(req: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + DATA_RETENTION_DAYS);
 
-    const participantData: any[] = [];
-    if (participants && Array.isArray(participants)) {
-      for (const p of participants) {
-        if (p.email) {
-          participantData.push({
-            email: p.email,
-            name: p.name || null,
-            token: crypto.randomBytes(16).toString("hex"),
-            expiresAt,
-          });
-        }
-      }
-    }
+    const participantData: any[] = Array.isArray(participants)
+      ? participants.filter((p: any) => p.email).map((p: any) => ({ email: p.email, name: p.name || null }))
+      : [];
+
+    const invitedParticipants = participantData.map((p) => ({
+      email: p.email,
+      name: p.name,
+    }));
 
     const meeting = await prisma.meeting.create({
       data: {
         title,
         meetingType: meetingType as "INSTANT" | "SCHEDULED",
+        durationMinutes,
         status: meetingType === "INSTANT" ? "ACTIVE" : "SCHEDULED",
         joinCode: generateJoinCode(),
-        scheduledAt: scheduledStart,
-        scheduledEndAt: scheduledEnd,
-        durationMinutes,
+        scheduledStart,
+        scheduledEnd,
         location: location || null,
         expiresAt,
         ownerId: userId,
         ownerType: "PERSONAL",
-        participants: { create: participantData },
+        invitedParticipants: invitedParticipants.length ? invitedParticipants : undefined,
       },
-      include: { participants: true },
     });
 
     const inviteResults = participantData.map((p) => ({
@@ -93,8 +87,7 @@ export async function POST(req: NextRequest) {
         meetingType: meeting.meetingType,
         status: meeting.status,
         joinCode: meeting.joinCode,
-        scheduledAt: meeting.scheduledAt,
-        scheduledEndAt: meeting.scheduledEndAt,
+        scheduledAt: meeting.scheduledStart,
         durationMinutes: meeting.durationMinutes,
         location: meeting.location,
         createdAt: meeting.createdAt,
@@ -118,16 +111,32 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
     const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? "10")));
 
-    const [meetings, total] = await Promise.all([
+    const [rawMeetings, total] = await Promise.all([
       prisma.meeting.findMany({
         where: { ownerId: userId },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { participants: true },
+        include: {
+          artifacts: { select: { type: true, status: true } },
+          attendances: { select: { id: true } },
+        },
       }),
       prisma.meeting.count({ where: { ownerId: userId } }),
     ]);
+
+    const meetings = rawMeetings.map((m) => ({
+      id: m.id,
+      title: m.title,
+      meetingType: m.meetingType,
+      status: m.status,
+      scheduledAt: m.scheduledStart,
+      durationMinutes: m.durationMinutes,
+      location: m.location,
+      participantCount: m.attendances.length,
+      hasArtifacts: m.artifacts.some((a) => a.status === "COMPLETED"),
+      createdAt: m.createdAt,
+    }));
 
     return NextResponse.json({
       meetings,

@@ -10,9 +10,12 @@ const isPublicRoute = createRouteMatcher([
   '/auth/callback(.*)',          // OAuth callback — MUST be public so Clerk can complete the flow
   '/auth/accept-invite(.*)',     // Enterprise invite acceptance
   '/create-meeting(.*)',         // Guest meeting creation
-  '/attendance/check-in(.*)',    // QR code scan / check-in
+  '/attendance(.*)',             // QR code scan / check-in (page + API)
   '/join(.*)',                   // Join meeting by code
   '/meeting/(.*)',               // Live meeting room (guests can join)
+  '/meetings/(.*)',              // Participant join flow
+  '/api/v1/(.*)',                // All v1 API routes handle auth internally
+  '/api/attendance/(.*)',        // Attendance check-in API
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

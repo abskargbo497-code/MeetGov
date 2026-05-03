@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       take: limit,
       include: {
         meeting: {
-          select: { id: true, title: true, scheduledAt: true },
+          select: { id: true, title: true, scheduledStart: true },
         },
       },
     });

@@ -38,11 +38,11 @@ export interface OnboardingStatus {
 }
 
 export const getCurrentUser = async (): Promise<UserInfo> => {
-  const response = await api.get<UserInfo>('/api/users/me');
+  const response = await api.get<UserInfo>('/api/v1/users/me');
   return response.data;
 };
 
 export const getOnboardingStatus = async (): Promise<OnboardingStatus> => {
-  const response = await api.get<OnboardingStatus>('/api/users/onboarding-status');
+  const response = await api.get<OnboardingStatus>('/api/v1/users/me');
   return response.data;
 };

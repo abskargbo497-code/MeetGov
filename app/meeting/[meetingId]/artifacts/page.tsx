@@ -157,7 +157,7 @@ export default function ArtifactsPage() {
     };
 
     init();
-  }, [loadMeeting, loadTranscriptionStatus, loadArtifacts, loadAccessLevel, router, session, isSessionLoading]);
+  }, [loadMeeting, loadTranscriptionStatus, loadArtifacts, loadAccessLevel, router, session?.user?.id, isSessionLoading]);
 
   // Poll for transcription status when processing
   useEffect(() => {

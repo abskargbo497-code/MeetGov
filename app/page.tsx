@@ -31,7 +31,6 @@ export default function Home() {
         {isLoaded && user ? (
           // Signed in — show Clerk avatar with built-in sign-out / profile dropdown
           <UserButton
-            afterSignOutUrl="/"
             appearance={{
               elements: {
                 avatarBox: "h-9 w-9",

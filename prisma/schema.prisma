@@ -235,6 +235,9 @@ model Meeting {
   title           String
   description     String?       @db.Text
   location        String?       // Online, In-person, or address
+  meetingType     String        @default("INSTANT") // INSTANT | SCHEDULED
+  durationMinutes Int           @default(30)
+  joinCode        String?       @unique
   status          MeetingStatus @default(SCHEDULED)
   processingStatus ProcessingStatus @default(IDLE)
   processingError String?       @db.Text // Error message if processing failed
@@ -422,6 +425,7 @@ model MeetingMinutes {
 // Task Status Enum
 enum TaskStatus {
   PENDING
+  IN_PROGRESS
   SUBMITTED
   COMPLETED
   CANCELLED

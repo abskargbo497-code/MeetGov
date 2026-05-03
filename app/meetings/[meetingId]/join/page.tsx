@@ -131,8 +131,8 @@ export default function ParticipantJoinPage() {
   // Handle Google sign-in via Clerk
   const handleSignIn = () => {
     openSignIn({
-      redirectUrl: `/meetings/${meetingId}/join`,
-    });
+      forceRedirectUrl: `${window.location.origin}/meetings/${meetingId}/join`,
+    } as any);
   };
 
   // Navigate to live meeting
