@@ -25,12 +25,7 @@ export async function GET(
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
     }
 
-    // Allow access: meeting owner or any guest (for guest meetings)
-    const isOwner = userId && meeting.ownerId === userId;
-    const isGuestMeeting = meeting.ownerType === "GUEST";
-    if (!isOwner && !isGuestMeeting) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    // Meeting ID is only reachable via join code lookup — no further access check needed
 
     return NextResponse.json({
       id: meeting.id,

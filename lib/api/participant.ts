@@ -134,7 +134,7 @@ export async function getAttendance(
 ): Promise<{ data: AttendanceResponse | null; error: Error | null }> {
   try {
     const response = await api.get<AttendanceResponse>(
-      `/api/participant/meetings/${meetingId}/attendance`
+      `/api/v1/meetings/${meetingId}/attendance`
     );
     return { data: response.data, error: null };
   } catch (error: any) {

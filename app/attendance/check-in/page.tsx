@@ -21,6 +21,7 @@ function CheckInContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [meetingTitle, setMeetingTitle] = useState<string | null>(null);
   const [canCheckIn, setCanCheckIn] = useState(true);
+  const [participantCount, setParticipantCount] = useState<number | null>(null);
 
   // Load meeting info for display
   useEffect(() => {
@@ -77,6 +78,13 @@ function CheckInContent() {
         email: email.trim() || undefined,
       });
       setState("success");
+      // Fetch participant count after successful check-in
+      try {
+        const countRes = await api.get(`/api/v1/meetings/${meetingId}/attendance`);
+        if (countRes.data?.totalCount !== undefined) {
+          setParticipantCount(countRes.data.totalCount);
+        }
+      } catch {}
     } catch (err: any) {
       console.error("Check-in failed:", err);
       // Handle duplicate check-in
@@ -147,6 +155,11 @@ function CheckInContent() {
               {meetingTitle && (
                 <span className="block mb-2">
                   <span className="font-medium text-foreground">{meetingTitle}</span>
+                </span>
+              )}
+              {participantCount !== null && (
+                <span className="block mb-2 text-sm">
+                  {participantCount} {participantCount === 1 ? "person" : "people"} checked in
                 </span>
               )}
               You can now close this page.

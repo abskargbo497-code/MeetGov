@@ -74,7 +74,7 @@ export default function WaitingRoomPage() {
 
       // If this is an INSTANT meeting, redirect to meeting room directly
       if (data.meetingType === "INSTANT") {
-        router.replace(`/meeting/${meetingId}`);
+        router.replace(`/meetings/${meetingId}/live`);
         return;
       }
 
@@ -82,7 +82,7 @@ export default function WaitingRoomPage() {
       if (data.status === "ACTIVE") {
         setIsTransitioning(true);
         setTimeout(() => {
-          router.push(`/meeting/${meetingId}`);
+          router.push(`/meetings/${meetingId}/live`);
         }, 1500);
         return;
       }
@@ -136,7 +136,7 @@ export default function WaitingRoomPage() {
         setCountdown({ hours: 0, minutes: 0, seconds: 0 });
         setIsTransitioning(true);
         setTimeout(() => {
-          router.push(`/meeting/${meetingId}`);
+          router.push(`/meetings/${meetingId}/live`);
         }, 1500);
         return;
       }
@@ -191,7 +191,7 @@ export default function WaitingRoomPage() {
   const handleStartNow = () => {
     setIsTransitioning(true);
     setTimeout(() => {
-      router.push(`/meeting/${meetingId}`);
+      router.push(`/meetings/${meetingId}/live`);
     }, 500);
   };
 

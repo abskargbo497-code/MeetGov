@@ -2,6 +2,7 @@
  * POST /api/v1/meetings/[meetingId]/resume — Resume recording
  */
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -14,6 +15,13 @@ export async function POST(
     const meeting = await prisma.meeting.findUnique({ where: { id: meetingId } });
     if (!meeting) {
       return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
+    }
+
+    if (meeting.ownerType !== "GUEST") {
+      const { userId } = await auth();
+      if (!userId || userId !== meeting.ownerId) {
+        return NextResponse.json({ error: "Only the meeting organizer can perform this action" }, { status: 403 });
+      }
     }
 
     const updated = await prisma.meeting.update({

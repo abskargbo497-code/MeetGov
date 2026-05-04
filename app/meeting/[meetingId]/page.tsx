@@ -226,6 +226,19 @@ export default function MeetingRoomPage() {
     init();
   }, [loadMeeting, router, session?.user?.id, isSessionLoading]);
 
+  // Redirect non-owners to the participant view
+  useEffect(() => {
+    if (!meeting || isSessionLoading) return;
+
+    const isOwner =
+      (meeting.createdBy.type === "GUEST" && !session?.user) || // guest organizer (no auth)
+      (!!session?.user?.id && meeting.createdBy.id === session.user.id); // authenticated owner
+
+    if (!isOwner) {
+      router.replace(`/meetings/${meetingId}/live`);
+    }
+  }, [meeting, session, isSessionLoading, meetingId, router]);
+
   // Fetch initial attendance data
   useEffect(() => {
     if (!meeting) return;
